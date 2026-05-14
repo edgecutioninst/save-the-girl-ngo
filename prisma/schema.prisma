@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- ENUMS (Strict types for your dropdowns) ---
+enum Role {
+  ADMIN
+  STAFF
+}
+
+enum Status {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum CertificateType {
+  HOST
+  VISITOR
+  DONOR
+  INTERN
+  VOLUNTEER
+}
+
+enum Mode {
+  VIRTUAL
+  OFFLINE
+}
+
+enum ScheduleType {
+  DAILY
+  WEEKLY
+  FLEXIBLE
+}
+
+// --- MODELS (Your Database Tables) ---
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(ADMIN)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Settings {
+  id                 String   @id @default(uuid())
+  centers            String[] // Native Postgres string array
+  donationCategories String[]
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model Submission {
+  id              String          @id @default(uuid())
+  applicantName   String
+  emails          String[]        
+  phones          String[]
+  socialLinks     Json?           // Stores { facebook: "url", instagram: "url" }
+  status          Status          @default(PENDING)
+  certificateType CertificateType
+
+  // --- INTERN & VOLUNTEER FIELDS ---
+  gender                  String?
+  startDate               DateTime?
+  endDate                 DateTime?
+  mode                    Mode?
+  postRole                String?
+  scheduleType            ScheduleType?
+  isUniversityRequirement Boolean   @default(false)
+  universityName          String?
+  donationType            String?
+  rating                  Int?
+
+  // --- HOST, VISITOR & DONOR FIELDS ---
+  eventDate                DateTime?
+  visitDate                DateTime?
+  facilityLocation         String?
+  companyCoordinator       String?
+  centerVisited            String?
+  noOfChildren             Int?
+  caretakers               String[]
+  
+  // JSON array for key-value pairs: [{ item: "Books", quantity: 20 }]
+  itemsDonated             Json?    
+  
+  reportUploadLink         String?
+  uploadPhotosLink         String?
+  futurePartnershipRemarks String?
+  additionalRemarks        String?
+  remarks                  String?
+  attendantName            String?
+  purposeOfVisit           String?  // General, Inspection, Donation
+  logisticsMethod          String?  // Pickup, Drop off
+
+  // Shared Financials
+  helpedFinancially        Boolean   @default(false)
+  financialAmount          Float?
+  nextExpectedVisit        DateTime?
+  nextFollowUpDue          DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
