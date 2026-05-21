@@ -19,7 +19,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-// 1. Expanded TypeScript Interface to catch the new data
+// Expanded TypeScript Interface
 type DonatedItem = { item: string; quantity: number };
 
 type Submission = {
@@ -42,6 +42,15 @@ export default function AdminDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("All Types");
   const [statusFilter, setStatusFilter] = useState("All Status");
+
+  // NEW: Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  // NEW: Reset to page 1 if the user types in the search bar or changes a filter
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, typeFilter, statusFilter]);
 
   const fetchSubmissions = async () => {
     setIsLoading(true);
@@ -97,7 +106,6 @@ export default function AdminDashboard() {
   const handleReject = (id: string) => updateStatus(id, "REJECTED");
 
   const handleDelete = async (id: string) => {
-    // Note: window.confirm removed. Shadcn Alert Dialog handles confirmation now.
     const toastId = toast.loading("Deleting record...");
     try {
       const response = await fetch(`/api/submissions?id=${id}`, {
@@ -109,6 +117,11 @@ export default function AdminDashboard() {
       if (json.success) {
         toast.success("Record deleted", { id: toastId });
         setSubmissions(submissions.filter(sub => sub.id !== id));
+        
+        // Edge case: If you delete the last item on a page, snap back to the previous page
+        if (paginatedSubmissions.length === 1 && currentPage > 1) {
+          setCurrentPage(prev => prev - 1);
+        }
       } else {
         toast.error(`Failed: ${json.error}`, { id: toastId });
       }
@@ -133,6 +146,11 @@ export default function AdminDashboard() {
     
     return matchesSearch && matchesType && matchesStatus;
   });
+
+  // NEW: Pagination Math (placed right after filtering)
+  const totalPages = Math.ceil(filteredSubmissions.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedSubmissions = filteredSubmissions.slice(startIndex, startIndex + itemsPerPage);
 
   return (
     <div className="p-8 w-full max-w-[1400px] mx-auto bg-slate-50 min-h-screen">
@@ -208,12 +226,12 @@ export default function AdminDashboard() {
                 <tr>
                   <td colSpan={6} className="px-6 py-8 text-center text-slate-500">Loading submissions...</td>
                 </tr>
-              ) : filteredSubmissions.length === 0 ? (
+              ) : paginatedSubmissions.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-8 text-center text-slate-500">No submissions found matching your criteria.</td>
                 </tr>
               ) : (
-                filteredSubmissions.map((sub) => (
+                paginatedSubmissions.map((sub) => (
                   <tr 
                     key={sub.id} 
                     onClick={() => router.push(`/submissions/${sub.id}`)}
@@ -270,7 +288,7 @@ export default function AdminDashboard() {
                       {sub.status === 'REJECTED' && <span className="bg-red-100 text-red-700 px-2.5 py-1 rounded-md text-xs font-bold border border-red-200">REJECTED</span>}
                     </td>
 
-                    {/* Actions - stopPropagation prevents row click when interacting with buttons */}
+                    {/* Actions */}
                     <td className="px-6 py-4 align-top" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-3">
                         <button onClick={() => handleApprove(sub.id)} className="text-green-600 hover:text-green-700 transition-colors bg-green-50 p-1.5 rounded-md" title="Approve">
@@ -281,7 +299,7 @@ export default function AdminDashboard() {
                         </button>
                         <div className="w-px h-6 bg-slate-200 mx-1"></div>
                         
-                        {/* Shadcn Alert Dialog for Delete */}
+                        {/* Shadcn Alert Dialog */}
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <button className="text-slate-400 hover:text-red-600 transition-colors p-1.5 rounded-md hover:bg-red-50" title="Delete">
@@ -317,10 +335,33 @@ export default function AdminDashboard() {
           </table>
         </div>
         
-        {/* Footer */}
-        <div className="p-4 border-t border-slate-200 bg-slate-50 text-right text-sm text-slate-500 font-medium">
-          Showing {filteredSubmissions.length} entries
+        {/* NEW: Interactive Pagination Footer */}
+        <div className="p-4 border-t border-slate-200 bg-slate-50 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="text-sm text-slate-500 font-medium">
+            Showing {filteredSubmissions.length === 0 ? 0 : startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredSubmissions.length)} of {filteredSubmissions.length} entries
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1.5 text-sm font-medium border border-slate-300 rounded-md bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              Previous
+            </button>
+            <div className="text-sm font-medium text-slate-600 px-2">
+              Page {currentPage} of {totalPages || 1}
+            </div>
+            <button 
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages || totalPages === 0}
+              className="px-3 py-1.5 text-sm font-medium border border-slate-300 rounded-md bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              Next
+            </button>
+          </div>
         </div>
+
       </div>
     </div>
   );

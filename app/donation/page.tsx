@@ -1,9 +1,10 @@
+/* eslint-disable react-hooks/incompatible-library */
 "use client";
 
-import { useState, KeyboardEvent } from "react";
+import { useState, KeyboardEvent, useEffect } from "react";
 import { useForm, SubmitHandler } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { X, Plus } from "lucide-react";
+import { X, Plus, Loader2 } from "lucide-react";
 
 // --- CUSTOM INPUT COMPONENTS ---
 
@@ -120,7 +121,7 @@ type DonorFormInputs = {
   applicantName: string;
   attendantName: string;
   logisticsMethod: string;
-  pickupAddress?: string; // Now explicitly optional in the type
+  pickupAddress?: string; 
   pickupChargesPaidBy: string;
   pickupDoneBy: string;
   centerVisited: string;
@@ -135,17 +136,15 @@ type DonorFormInputs = {
   remarks: string;
 };
 
-const CENTERS = [
-  "Surya Vihar, Sec-9 Gurgaon",
-  "Tigra Village, Sec-57 Gurgaon",
-  "Noida Sec-63"
-];
-
 export default function DonationCertificatePage() {
   const [emails, setEmails] = useState<string[]>([]);
   const [phones, setPhones] = useState<string[]>([]);
   const [donatedItems, setDonatedItems] = useState<DonatedItem[]>([]);
   const [visitSure, setVisitSure] = useState(true);
+
+  // --- NEW: Dynamic Centers State ---
+  const [availableCenters, setAvailableCenters] = useState<string[]>([]);
+  const [isLoadingCenters, setIsLoadingCenters] = useState(true);
 
   const { 
     register, 
@@ -157,13 +156,32 @@ export default function DonationCertificatePage() {
     defaultValues: {
       logisticsMethod: 'Drop',
       helpedFinancially: 'No',
-      centerVisited: CENTERS[0],
+      centerVisited: '', // Default empty to force selection
       pickupChargesPaidBy: 'Donor'
     }
   });
 
   const currentLogistics = watch("logisticsMethod");
   const currentHelpedFinancially = watch("helpedFinancially");
+
+  // --- NEW: Fetch Centers on Mount ---
+  useEffect(() => {
+    const fetchCenters = async () => {
+      try {
+        const res = await fetch('/api/settings');
+        const json = await res.json();
+        if (json.success) {
+          setAvailableCenters(json.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch centers", error);
+        toast.error("Failed to load active centers.");
+      } finally {
+        setIsLoadingCenters(false);
+      }
+    };
+    fetchCenters();
+  }, []);
 
   const onSubmit: SubmitHandler<DonorFormInputs> = async (data) => {
     if (phones.length === 0) {
@@ -244,7 +262,7 @@ export default function DonationCertificatePage() {
             <input 
               {...register("applicantName", { required: true })} 
               type="text" 
-              className={`w-full p-2.5 border rounded-md outline-none ${errors.applicantName ? 'border-red-500' : 'border-slate-300'}`} 
+              className={`w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-blue-500 ${errors.applicantName ? 'border-red-500' : 'border-slate-300'}`} 
               placeholder="Full name" 
             />
           </div>
@@ -253,7 +271,7 @@ export default function DonationCertificatePage() {
             <input 
               {...register("attendantName", { required: true })} 
               type="text" 
-              className={`w-full p-2.5 border rounded-md outline-none ${errors.attendantName ? 'border-red-500' : 'border-slate-300'}`} 
+              className={`w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-blue-500 ${errors.attendantName ? 'border-red-500' : 'border-slate-300'}`} 
               placeholder="Assigned attendant" 
             />
           </div>
@@ -280,7 +298,6 @@ export default function DonationCertificatePage() {
             {currentLogistics === "Pickup" ? (
               <>
                 <div className="space-y-2 md:col-span-2">
-                  {/* Validation removed, marked optional */}
                   <label className="text-sm font-medium text-slate-700">Address of Pickup (Optional)</label>
                   <textarea 
                     {...register("pickupAddress")} 
@@ -290,7 +307,7 @@ export default function DonationCertificatePage() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-slate-700">Pickup Charges Paid By</label>
-                  <select {...register("pickupChargesPaidBy")} className="w-full p-2.5 border border-slate-300 rounded-md bg-white text-slate-900 outline-none">
+                  <select {...register("pickupChargesPaidBy")} className="w-full p-2.5 border border-slate-300 rounded-md bg-white text-slate-900 outline-none focus:ring-2 focus:ring-blue-500">
                     <option value="Donor">Donor</option>
                     <option value="Organisation">Organisation</option>
                   </select>
@@ -300,7 +317,7 @@ export default function DonationCertificatePage() {
                   <input 
                     {...register("pickupDoneBy")} 
                     type="text" 
-                    className="w-full p-2.5 border border-slate-300 rounded-md outline-none" 
+                    className="w-full p-2.5 border border-slate-300 rounded-md outline-none focus:ring-2 focus:ring-blue-500" 
                     placeholder="Name of logistics handler" 
                   />
                 </div>
@@ -308,9 +325,19 @@ export default function DonationCertificatePage() {
             ) : (
               <div className="space-y-2 md:col-span-2">
                 <label className="text-sm font-medium text-slate-700">Center Visited<span className="text-red-500 ml-1">*</span></label>
-                <select {...register("centerVisited", { required: true })} className="w-full p-2.5 border border-slate-300 rounded-md bg-white text-slate-900 outline-none">
-                  {CENTERS.map((center, i) => <option key={i} value={center}>{center}</option>)}
-                </select>
+                <div className="relative">
+                  <select 
+                    {...register("centerVisited", { required: true })} 
+                    disabled={isLoadingCenters}
+                    className={`w-full p-2.5 border rounded-md bg-white text-slate-900 outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:text-slate-500 ${errors.centerVisited ? 'border-red-500' : 'border-slate-300'}`}
+                  >
+                    <option value="">{isLoadingCenters ? "Loading centers..." : "Select a center..."}</option>
+                    {availableCenters.map((center, i) => (
+                      <option key={i} value={center}>{center}</option>
+                    ))}
+                  </select>
+                  {isLoadingCenters && <Loader2 className="absolute right-8 top-3 h-4 w-4 animate-spin text-slate-400" />}
+                </div>
               </div>
             )}
           </div>
@@ -330,10 +357,10 @@ export default function DonationCertificatePage() {
           <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
             <label className="block text-sm font-medium text-slate-700 mb-4">Social Media Links (Optional)</label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input {...register("facebook")} type="url" className="w-full p-2 border border-slate-300 rounded-md outline-none" placeholder="Facebook URL" />
-              <input {...register("instagram")} type="url" className="w-full p-2 border border-slate-300 rounded-md outline-none" placeholder="Instagram URL" />
-              <input {...register("linkedin")} type="url" className="w-full p-2 border border-slate-300 rounded-md outline-none" placeholder="LinkedIn URL" />
-              <input {...register("twitter")} type="url" className="w-full p-2 border border-slate-300 rounded-md outline-none" placeholder="Twitter URL" />
+              <input {...register("facebook")} type="url" className="w-full p-2 border border-slate-300 rounded-md outline-none focus:ring-2 focus:ring-blue-500" placeholder="Facebook URL" />
+              <input {...register("instagram")} type="url" className="w-full p-2 border border-slate-300 rounded-md outline-none focus:ring-2 focus:ring-blue-500" placeholder="Instagram URL" />
+              <input {...register("linkedin")} type="url" className="w-full p-2 border border-slate-300 rounded-md outline-none focus:ring-2 focus:ring-blue-500" placeholder="LinkedIn URL" />
+              <input {...register("twitter")} type="url" className="w-full p-2 border border-slate-300 rounded-md outline-none focus:ring-2 focus:ring-blue-500" placeholder="Twitter URL" />
             </div>
           </div>
         </div>
@@ -345,7 +372,7 @@ export default function DonationCertificatePage() {
               <label className="text-sm font-medium text-slate-700">Have helped financially?<span className="text-red-500 ml-1">*</span></label>
               <select 
                 {...register("helpedFinancially", { required: true })} 
-                className="w-full p-2.5 border border-slate-300 rounded-md bg-white text-slate-900 outline-none"
+                className="w-full p-2.5 border border-slate-300 rounded-md bg-white text-slate-900 outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="No">No</option>
                 <option value="Yes">Yes</option>
@@ -381,7 +408,7 @@ export default function DonationCertificatePage() {
               {...register("nextFollowUpDue", { required: visitSure })}
               type="date" 
               disabled={!visitSure}
-              className={`w-full p-2.5 border rounded-md outline-none transition-colors ${!visitSure ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed' : 'bg-white border-slate-300 text-slate-900'} ${errors.nextFollowUpDue ? 'border-red-500' : ''}`} 
+              className={`w-full p-2.5 border rounded-md outline-none transition-colors ${!visitSure ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed' : 'bg-white border-slate-300 text-slate-900 focus:ring-2 focus:ring-blue-500'} ${errors.nextFollowUpDue ? 'border-red-500' : ''}`} 
             />
           </div>
         </div>
@@ -389,11 +416,11 @@ export default function DonationCertificatePage() {
         <div className="grid grid-cols-1 gap-6">
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">Upload Photos (Google Drive Link)</label>
-            <input {...register("photosLink")} type="url" className="w-full p-2.5 border border-slate-300 rounded-md outline-none text-blue-600" placeholder="https://drive.google.com/..." />
+            <input {...register("photosLink")} type="url" className="w-full p-2.5 border border-slate-300 rounded-md outline-none focus:ring-2 focus:ring-blue-500 text-blue-600" placeholder="https://drive.google.com/..." />
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">Remarks</label>
-            <textarea {...register("remarks")} className="w-full p-2.5 border border-slate-300 rounded-md h-20 outline-none" placeholder="Add any extra notes here..."></textarea>
+            <textarea {...register("remarks")} className="w-full p-2.5 border border-slate-300 rounded-md h-20 outline-none focus:ring-2 focus:ring-blue-500 text-slate-900" placeholder="Add any extra notes here..."></textarea>
           </div>
         </div>
 
@@ -407,7 +434,7 @@ export default function DonationCertificatePage() {
           </button>
           <button 
             type="submit" 
-            disabled={isSubmitting} 
+            disabled={isSubmitting || isLoadingCenters} 
             className="px-6 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50"
           >
             {isSubmitting ? 'Saving...' : 'Save Donation Data'}

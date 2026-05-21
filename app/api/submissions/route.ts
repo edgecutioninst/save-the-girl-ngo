@@ -5,12 +5,15 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     
+    const finalStatus = body.isAdmin ? 'APPROVED' : 'PENDING';
+
     const newSubmission = await prisma.submission.create({
       data: {
         // --- CORE FIELDS ---
+
         applicantName: body.applicantName,
         certificateType: body.certificateType,
-        status: 'PENDING', 
+        status: finalStatus,
         emails: body.emails || (body.email ? [body.email] : []),
         phones: body.phones || (body.phone ? [body.phone] : []),
         

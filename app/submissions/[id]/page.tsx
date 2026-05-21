@@ -1,170 +1,248 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { prisma } from "@/db/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, User, Mail, Phone, Calendar, MapPin, Building, Briefcase } from "lucide-react";
+import { 
+  ArrowLeft, Mail, Phone, Calendar, MapPin, Building, Briefcase, 
+  UserCircle, Link as LinkIcon, Baby, Users, FileText, CheckCircle, 
+  Clock, Map, HeartHandshake, Image as ImageIcon, Star
+} from "lucide-react";
+import SubmissionControls from "@/modules/submissions/SubmissionControls";
+
+// --- HELPER COMPONENT ---
+// block if the value is null or undefined
+const DetailItem = ({ icon: Icon, label, value }: { icon: any, label: string, value: any }) => {
+  if (value === null || value === undefined || value === '') return null;
+  if (Array.isArray(value) && value.length === 0) return null;
+  if (typeof value === 'boolean' && !value) return null; // Hide false booleans
+
+  return (
+    <div className="space-y-1.5 p-4 bg-slate-50 border border-slate-100 rounded-lg">
+      <span className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider">
+        <Icon className="h-4 w-4 text-blue-500" />
+        {label}
+      </span>
+      <div className="text-slate-900 font-medium">
+        {typeof value === 'boolean' ? 'Yes' : value}
+      </div>
+    </div>
+  );
+};
 
 // Next.js Server Component
-export default async function SubmissionDetailPage({ params }: { params: { id: string } }) {
-  // 1. Fetch directly from the database
+export default async function SubmissionDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  
+  // 1. AWAIT THE PARAMS (The Next.js 15 Fix)
+  const resolvedParams = await params;
+  const submissionId = resolvedParams.id;
+
+  // 2. Fetch directly from the database
   const submission = await prisma.submission.findUnique({
-    where: { id: params.id },
+    where: { id: submissionId },
   });
 
-  if (!submission) {
-    return notFound(); // Automatically throws a 404 page if the ID doesn't exist
-  }
+  if (!submission) return notFound(); 
 
   // Parse JSON data safely
   const itemsDonated = submission.itemsDonated as { item: string, quantity: number }[] | null;
   const socialLinks = submission.socialLinks as Record<string, string> | null;
 
+  // Helper for formatting dates cleanly
+  const formatDate = (date: Date | null) => date ? new Date(date).toLocaleDateString('en-IN', { dateStyle: 'medium' }) : null;
+
   return (
-    <div className="min-h-screen bg-slate-50 p-8">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="min-h-screen bg-slate-100 p-6 md:p-8">
+      <div className="max-w-5xl mx-auto space-y-6">
         
         {/* Navigation & Header */}
-        <div className="flex items-center justify-between">
-          <Link href="/" className="flex items-center text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <Link href="/" className="flex items-center text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm w-fit">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Dashboard
           </Link>
-          <div className="flex gap-3">
-            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-              submission.status === 'APPROVED' ? 'bg-green-100 text-green-700' :
-              submission.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
-              'bg-amber-100 text-amber-700'
+          <div className="flex gap-2">
+            <span className={`px-4 py-1.5 rounded-md text-xs font-black uppercase tracking-widest shadow-sm ${
+              submission.status === 'APPROVED' ? 'bg-green-100 text-green-700 border border-green-200' :
+              submission.status === 'REJECTED' ? 'bg-red-100 text-red-700 border border-red-200' :
+              'bg-amber-100 text-amber-700 border border-amber-200'
             }`}>
               {submission.status}
             </span>
-            <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold uppercase tracking-wider">
+            <span className="px-4 py-1.5 bg-slate-800 text-white border border-slate-700 rounded-md text-xs font-black uppercase tracking-widest shadow-sm">
               {submission.certificateType}
             </span>
           </div>
         </div>
 
-        {/* Master Card */}
-        <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+        {/* Action Controls */}
+        <SubmissionControls id={submission.id} currentStatus={submission.status} />
+
+        {/* --- MAIN DATA GRID --- */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
-          {/* Core Identity Section (Applies to everyone) */}
-          <div className="p-6 border-b border-slate-200 bg-slate-50/50">
-            <h1 className="text-3xl font-bold text-slate-900 mb-6">{submission.applicantName}</h1>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Contact Info</h3>
-                {submission.phones.length > 0 && (
-                  <div className="flex items-start gap-3 text-slate-700">
-                    <Phone className="h-5 w-5 text-slate-400 mt-0.5" />
-                    <div>
-                      {submission.phones.map((phone, i) => <div key={i}>{phone}</div>)}
-                    </div>
-                  </div>
-                )}
-                {submission.emails.length > 0 && (
-                  <div className="flex items-start gap-3 text-slate-700">
-                    <Mail className="h-5 w-5 text-slate-400 mt-0.5" />
-                    <div>
-                      {submission.emails.map((email, i) => <div key={i}>{email}</div>)}
-                    </div>
-                  </div>
-                )}
+          {/* LEFT COLUMN: Identity & Contact (1/3 width) */}
+          <div className="space-y-6">
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+              <div className="h-16 w-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-4">
+                <UserCircle className="h-8 w-8" />
               </div>
+              <h1 className="text-2xl font-bold text-slate-900 mb-1">{submission.applicantName}</h1>
+              <p className="text-sm text-slate-500 mb-6 flex items-center gap-2">
+                <Calendar className="h-4 w-4" /> Submitted {formatDate(submission.createdAt)}
+              </p>
 
               <div className="space-y-4">
-                <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Submission Meta</h3>
-                <div className="flex items-center gap-3 text-slate-700">
-                  <Calendar className="h-5 w-5 text-slate-400" />
-                  <span>Submitted: {new Date(submission.createdAt).toLocaleDateString('en-IN', { dateStyle: 'medium' })}</span>
-                </div>
+                {submission.phones.length > 0 && (
+                  <div>
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Phone Numbers</span>
+                    {submission.phones.map((phone, i) => (
+                      <a key={i} href={`tel:${phone}`} className="flex items-center gap-2 text-slate-700 hover:text-blue-600 font-medium py-1">
+                        <Phone className="h-4 w-4 text-slate-400" /> {phone}
+                      </a>
+                    ))}
+                  </div>
+                )}
+                
+                {submission.emails.length > 0 && (
+                  <div>
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Email Addresses</span>
+                    {submission.emails.map((email, i) => (
+                      <a key={i} href={`mailto:${email}`} className="flex items-center gap-2 text-slate-700 hover:text-blue-600 font-medium py-1 break-all">
+                        <Mail className="h-4 w-4 text-slate-400" /> {email}
+                      </a>
+                    ))}
+                  </div>
+                )}
+
+                {socialLinks && Object.keys(socialLinks).length > 0 && (
+                  <div>
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Social Profiles</span>
+                    {Object.entries(socialLinks).map(([platform, url], i) => (
+                      <a key={i} href={url} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-blue-600 hover:underline font-medium py-1 capitalize">
+                        <LinkIcon className="h-4 w-4" /> {platform}
+                      </a>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
+
+            {/* Financial Summary Card (Only shows if helpedFinancially is true) */}
+            {submission.helpedFinancially && (
+              <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl shadow-sm border border-green-200 p-6">
+                <h3 className="text-sm font-bold text-green-800 uppercase tracking-wider mb-2 flex items-center gap-2">
+                  <HeartHandshake className="h-5 w-5" /> Financial Contribution
+                </h3>
+                <p className="text-3xl font-black text-green-700">₹{submission.financialAmount?.toLocaleString()}</p>
+                {submission.donationType && <p className="text-green-600 text-sm font-medium mt-1">Via {submission.donationType}</p>}
+              </div>
+            )}
           </div>
 
-          {/* POLYMORPHIC SECTION: Conditionally render based on Type */}
-          <div className="p-6">
-            <h2 className="text-xl font-bold text-slate-900 mb-6">Specific Details</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* RIGHT COLUMN: Operational Data (2/3 width) */}
+          <div className="lg:col-span-2 space-y-6">
+            
+            {/* Contextual Details Grid */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+              <h2 className="text-lg font-bold text-slate-900 mb-4 border-b pb-2">Engagement Details</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                
+                {/* Automatically Maps all potential DB fields. If null, it hides itself. */}
+                <DetailItem icon={Briefcase} label="Post / Role" value={submission.postRole} />
+                <DetailItem icon={Building} label="University Name" value={submission.universityName} />
+                <DetailItem icon={CheckCircle} label="Univ. Requirement" value={submission.isUniversityRequirement} />
+                <DetailItem icon={MapPin} label="Center Visited" value={submission.centerVisited} />
+                <DetailItem icon={Map} label="Facility Location" value={submission.facilityLocation} />
+                <DetailItem icon={UserCircle} label="Attendant Name" value={submission.attendantName} />
+                <DetailItem icon={Users} label="Company Coordinator" value={submission.companyCoordinator} />
+                <DetailItem icon={Baby} label="No. of Children" value={submission.noOfChildren} />
+                <DetailItem icon={FileText} label="Purpose of Visit" value={submission.purposeOfVisit} />
+                <DetailItem icon={Star} label="Rating" value={submission.rating ? `${submission.rating} / 5` : null} />
+                <DetailItem icon={UserCircle} label="Gender" value={submission.gender} />
+                <DetailItem icon={Users} label="Mode" value={submission.mode} />
+                <DetailItem icon={Clock} label="Schedule Type" value={submission.scheduleType} />
+                
+                <DetailItem icon={Calendar} label="Start Date" value={formatDate(submission.startDate)} />
+                <DetailItem icon={Calendar} label="End Date" value={formatDate(submission.endDate)} />
+                <DetailItem icon={Calendar} label="Visit Date" value={formatDate(submission.visitDate)} />
+                <DetailItem icon={Calendar} label="Event Date" value={formatDate(submission.eventDate)} />
+                <DetailItem icon={Calendar} label="Next Visit Exp." value={formatDate(submission.nextExpectedVisit)} />
+                <DetailItem icon={Calendar} label="Follow-up Due" value={formatDate(submission.nextFollowUpDue)} />
+              </div>
 
-              {/* Intern & Volunteer Exclusive Data */}
-              {(submission.certificateType === 'INTERN' || submission.certificateType === 'VOLUNTEER') && (
-                <>
-                  {submission.postRole && (
-                    <div className="space-y-1">
-                      <span className="text-sm text-slate-500 font-medium">Role / Position</span>
-                      <p className="font-semibold text-slate-900 flex items-center gap-2"><Briefcase className="h-4 w-4 text-slate-400"/> {submission.postRole}</p>
-                    </div>
-                  )}
-                  {submission.universityName && (
-                    <div className="space-y-1">
-                      <span className="text-sm text-slate-500 font-medium">University</span>
-                      <p className="font-semibold text-slate-900 flex items-center gap-2"><Building className="h-4 w-4 text-slate-400"/> {submission.universityName}</p>
-                    </div>
-                  )}
-                  {submission.scheduleType && (
-                    <div className="space-y-1">
-                      <span className="text-sm text-slate-500 font-medium">Schedule</span>
-                      <p className="font-semibold text-slate-900">{submission.scheduleType}</p>
-                    </div>
-                  )}
-                </>
-              )}
-
-              {/* Host & Visitor Exclusive Data */}
-              {(submission.certificateType === 'HOST' || submission.certificateType === 'VISITOR') && (
-                <>
-                  {submission.centerVisited && (
-                    <div className="space-y-1">
-                      <span className="text-sm text-slate-500 font-medium">Center Visited</span>
-                      <p className="font-semibold text-slate-900 flex items-center gap-2"><MapPin className="h-4 w-4 text-slate-400"/> {submission.centerVisited}</p>
-                    </div>
-                  )}
-                  {submission.eventDate && (
-                    <div className="space-y-1">
-                      <span className="text-sm text-slate-500 font-medium">Event Date</span>
-                      <p className="font-semibold text-slate-900">{new Date(submission.eventDate).toLocaleDateString()}</p>
-                    </div>
-                  )}
-                  {submission.caretakers.length > 0 && (
-                    <div className="space-y-1 md:col-span-2">
-                      <span className="text-sm text-slate-500 font-medium">Caretakers Present</span>
-                      <div className="flex flex-wrap gap-2 mt-1">
-                        {submission.caretakers.map((c, i) => (
-                          <span key={i} className="px-3 py-1 bg-slate-100 text-slate-700 rounded-md text-sm">{c}</span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-
-              {/* Inventory/Donation Data (Applies to Donors, Hosts, Visitors) */}
-              {itemsDonated && itemsDonated.length > 0 && (
-                <div className="space-y-2 md:col-span-2 mt-4">
-                  <span className="text-sm text-slate-500 font-medium block border-b pb-2">Inventory Donated</span>
-                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
-                    {itemsDonated.map((entry, i) => (
-                      <li key={i} className="flex justify-between items-center bg-slate-50 p-3 rounded-md border border-slate-100">
-                        <span className="font-medium text-slate-700">{entry.item}</span>
-                        <span className="text-slate-500 bg-white px-2 py-1 rounded shadow-sm text-sm border border-slate-200">Qty: {entry.quantity}</span>
-                      </li>
+              {/* Caretakers Array */}
+              {submission.caretakers && submission.caretakers.length > 0 && (
+                <div className="mt-4 p-4 bg-slate-50 border border-slate-100 rounded-lg">
+                  <span className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                    <Users className="h-4 w-4 text-blue-500" /> Caretakers Present
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    {submission.caretakers.map((c, i) => (
+                      <span key={i} className="px-3 py-1 bg-white border border-slate-200 text-slate-700 rounded-md text-sm font-medium shadow-sm">{c}</span>
                     ))}
-                  </ul>
+                  </div>
                 </div>
               )}
-
-              {/* Financial Data */}
-              {submission.helpedFinancially && (
-                <div className="space-y-1 p-4 bg-green-50 border border-green-200 rounded-lg md:col-span-2 mt-4">
-                  <span className="text-sm text-green-800 font-bold uppercase tracking-wider block mb-1">Financial Contribution</span>
-                  <p className="text-2xl font-black text-green-700">₹{submission.financialAmount?.toLocaleString()}</p>
-                </div>
-              )}
-
             </div>
+
+            {/* Inventory Donated */}
+            {itemsDonated && itemsDonated.length > 0 && (
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                <h2 className="text-lg font-bold text-slate-900 mb-4 border-b pb-2">Inventory Donated</h2>
+                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {itemsDonated.map((entry, i) => (
+                    <li key={i} className="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
+                      <span className="font-semibold text-slate-700">{entry.item}</span>
+                      <span className="text-slate-600 bg-white px-3 py-1 rounded-md shadow-sm border border-slate-200 font-mono text-sm">Qty: {entry.quantity}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Remarks & Links */}
+            {(submission.additionalRemarks || submission.futurePartnershipRemarks || submission.uploadPhotosLink || submission.reportUploadLink) && (
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-6">
+                <h2 className="text-lg font-bold text-slate-900 border-b pb-2">Documents & Remarks</h2>
+                
+                {/* External Links */}
+                {(submission.uploadPhotosLink || submission.reportUploadLink) && (
+                  <div className="flex flex-wrap gap-4">
+                    {submission.uploadPhotosLink && (
+                      <a href={submission.uploadPhotosLink} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg font-medium transition-colors border border-blue-200">
+                        <ImageIcon className="h-5 w-5" /> View Uploaded Photos
+                      </a>
+                    )}
+                    {submission.reportUploadLink && (
+                      <a href={submission.reportUploadLink} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg font-medium transition-colors border border-indigo-200">
+                        <FileText className="h-5 w-5" /> View Attached Report
+                      </a>
+                    )}
+                  </div>
+                )}
+
+                {/* Text Remarks */}
+                <div className="space-y-4">
+                  {submission.additionalRemarks && (
+                    <div className="p-4 bg-amber-50/50 border border-amber-100 rounded-lg">
+                      <span className="text-xs font-bold text-amber-800 uppercase tracking-wider block mb-1">General Remarks</span>
+                      <p className="text-slate-700 whitespace-pre-wrap text-sm leading-relaxed">{submission.additionalRemarks}</p>
+                    </div>
+                  )}
+                  {submission.futurePartnershipRemarks && (
+                    <div className="p-4 bg-purple-50/50 border border-purple-100 rounded-lg">
+                      <span className="text-xs font-bold text-purple-800 uppercase tracking-wider block mb-1">Future Partnership Notes</span>
+                      <p className="text-slate-700 whitespace-pre-wrap text-sm leading-relaxed">{submission.futurePartnershipRemarks}</p>
+                    </div>
+                  )}
+                </div>
+
+              </div>
+            )}
+
           </div>
         </div>
-
       </div>
     </div>
   );

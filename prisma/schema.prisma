@@ -43,9 +43,10 @@ enum ScheduleType {
 model User {
   id        String   @id @default(uuid())
   name      String
-  email     String   @unique
-  password  String
-  role      Role     @default(ADMIN)
+  username  String   @unique  // The custom User ID created by the Admin
+  email     String?  @unique  // used by the Admin account
+  password  String            // Hashed 
+  role      Role     @default(STAFF)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
