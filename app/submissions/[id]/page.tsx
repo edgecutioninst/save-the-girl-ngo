@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import { prisma } from "@/db/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -76,7 +76,12 @@ export default async function SubmissionDetailPage({ params }: { params: Promise
         </div>
 
         {/* Action Controls */}
-        <SubmissionControls id={submission.id} currentStatus={submission.status} />
+        <SubmissionControls 
+          id={submission.id} 
+          currentStatus={submission.status} 
+          applicantName={submission.applicantName}
+          certificateType={submission.certificateType}
+        />
 
         {/* --- MAIN DATA GRID --- */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -130,7 +135,7 @@ export default async function SubmissionDetailPage({ params }: { params: Promise
 
             {/* Financial Summary Card (Only shows if helpedFinancially is true) */}
             {submission.helpedFinancially && (
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl shadow-sm border border-green-200 p-6">
+              <div className="bg-linear-to-br from-green-50 to-emerald-50 rounded-xl shadow-sm border border-green-200 p-6">
                 <h3 className="text-sm font-bold text-green-800 uppercase tracking-wider mb-2 flex items-center gap-2">
                   <HeartHandshake className="h-5 w-5" /> Financial Contribution
                 </h3>

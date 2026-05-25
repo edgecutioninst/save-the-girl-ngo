@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
@@ -21,15 +22,17 @@ import { Button } from "@/components/ui/button";
 interface ControlProps {
   id: string;
   currentStatus: string;
+  applicantName: string | null;
+  certificateType: string;
 }
 
-export default function SubmissionControls({ id, currentStatus }: ControlProps) {
+export default function SubmissionControls({ id, currentStatus, applicantName, certificateType }: ControlProps) {
   const [status, setStatus] = useState(currentStatus);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const router = useRouter();
 
-  // Re-using the same PATCH logic we built for the dashboard
   const updateStatus = async (newStatus: "APPROVED" | "REJECTED" | "PENDING") => {
     setIsUpdating(true);
     const toastId = toast.loading(`Updating to ${newStatus}...`);
@@ -46,7 +49,7 @@ export default function SubmissionControls({ id, currentStatus }: ControlProps) 
       if (json.success) {
         toast.success(`Status updated!`, { id: toastId });
         setStatus(newStatus);
-        router.refresh(); // Refresh the server page to update the badge
+        router.refresh(); 
       } else {
         toast.error(`Error: ${json.error}`, { id: toastId });
       }
@@ -57,9 +60,45 @@ export default function SubmissionControls({ id, currentStatus }: ControlProps) 
     }
   };
 
-  const handleGenerateCertificate = () => {
-    toast.success("PDF Logic will be integrated here soon!");
-    setIsModalOpen(false);
+  const handleGenerateCertificate = async () => {
+    setIsGenerating(true);
+    const toastId = toast.loading("Stamping PDF...");
+
+    try {
+      const response = await fetch('/api/certificates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to generate certificate.");
+      }
+
+      const blob = await response.blob();
+      
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      
+      const cleanName = applicantName ? applicantName.replace(/\s+/g, '_') : 'Applicant';
+      a.download = `${cleanName}_${certificateType}_Certificate.pdf`;
+      
+      document.body.appendChild(a);
+      a.click();
+      
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast.success("Certificate downloaded successfully!", { id: toastId });
+      setIsModalOpen(false); 
+    } catch (error: any) {
+      console.error("PDF Error:", error);
+      toast.error(error.message || "Network error.", { id: toastId });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -93,36 +132,45 @@ export default function SubmissionControls({ id, currentStatus }: ControlProps) 
         </button>
       </div>
 
-      {/* Certificate Modal */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogTrigger asChild>
-          <Button className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
-            <FileBadge className="h-4 w-4" />
-            Generate Certificate
-          </Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Generate Official Certificate</DialogTitle>
-            <DialogDescription>
-              This will create a signed PDF certificate. You can choose to automatically mail it to the applicant and NGO records.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="py-4 space-y-4">
-             <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg text-sm text-blue-700 italic">
-               Note: The PDF template and mailing automation will be added soon.
-             </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-            <Button onClick={handleGenerateCertificate} className="bg-blue-600">
-              Confirm & Generate
+      {/* Certificate Modal - Only show button if Approved */}
+      {status === 'APPROVED' && (
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
+              <FileBadge className="h-4 w-4" />
+              Generate Certificate
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Generate Official Certificate</DialogTitle>
+              <DialogDescription>
+                This will create a signed PDF certificate.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="py-4 space-y-4">
+               <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg text-sm text-blue-700 italic">
+                 Note: The PDF will download locally to your machine for review. Automated emailing will be added in the next phase.
+               </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsModalOpen(false)} disabled={isGenerating}>Cancel</Button>
+              <Button onClick={handleGenerateCertificate} disabled={isGenerating} className="bg-blue-600 min-w-35">
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Generating
+                  </>
+                ) : (
+                  "Confirm & Generate"
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
