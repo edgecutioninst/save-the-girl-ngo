@@ -3,8 +3,45 @@ import { prisma } from '@/db/prisma';
 import { PDFDocument, rgb, StandardFonts, PDFFont } from 'pdf-lib';
 import fs from 'fs/promises';
 import path from 'path';
+import { google } from 'googleapis';
+import { Readable } from 'stream';
 
-// --- TEXT WRAPPING UTILITY ---
+// --- GOOGLE DRIVE UPLOAD ---
+// --- GOOGLE DRIVE UPLOAD (OAUTH2) ---
+async function uploadToDrive(pdfBuffer: Buffer, fileName: string) {
+  const oauth2Client = new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    "https://developers.google.com/oauthplayground"
+  );
+
+  oauth2Client.setCredentials({
+    refresh_token: process.env.GOOGLE_REFRESH_TOKEN
+  });
+
+  const drive = google.drive({ version: 'v3', auth: oauth2Client });
+
+  const fileMetadata = {
+    name: fileName,
+    parents: [process.env.GOOGLE_DRIVE_FOLDER_ID!],
+  };
+
+  const media = {
+    mimeType: 'application/pdf',
+    body: Readable.from(pdfBuffer),
+  };
+
+  const response = await drive.files.create({
+    requestBody: fileMetadata,
+    media: media,
+    fields: 'id, webViewLink',
+  });
+
+  return response.data;
+
+}
+
+// --- TEXT WRAPPING  ---
 function wrapText(text: string, maxWidth: number, font: PDFFont, fontSize: number): string[] {
   const words = text.split(' ');
   // eslint-disable-next-line prefer-const
@@ -166,23 +203,19 @@ export async function POST(req: Request) {
         break;
 
       case 'HOST':
-        // 1. Top Left Date (Hosting Date) - Size Increased to 34
         const hostDate = submission.visitDate || submission.startDate || submission.createdAt;
         page.drawText(formatDt(hostDate), { x: 158, y: 1092, size: 34, font: boldFont, color: textColor });
 
-        // 2. Line-Centered Name - Shifted down to 898
         const hostName = applicantName || "Unknown Name";
         const hostNameWidth = boldFont.widthOfTextAtSize(hostName, 48);
         const hostNameLineCenter = 1064 + ((rightMarginX - 1064) / 2);
         page.drawText(hostName, { x: hostNameLineCenter - (hostNameWidth / 2), y: 898, size: 48, font: boldFont, color: textColor });
 
-        // 3. Line-Centered Facility - Shifted down to 786
         const hostFacilityStr = (submission.facilityLocation || "Our Center").toUpperCase();
         const hostFacWidth = boldFont.widthOfTextAtSize(hostFacilityStr, 38);
         const hostFacLineCenter = 791 + ((rightMarginX - 791) / 2);
         page.drawText(hostFacilityStr, { x: hostFacLineCenter - (hostFacWidth / 2), y: 786, size: 38, font: boldFont, color: textColor });
 
-        // 4. MULTI-LINE Wrapped Donations (Kept as is)
         let hostDonationStr = "N/A";
         const hostItems = submission.itemsDonated as { item: string, quantity: number }[] | null;
         
@@ -210,15 +243,28 @@ export async function POST(req: Request) {
     // 5. Save Buffer
     const pdfBytes = await pdfDoc.save();
     const pdfBuffer = Buffer.from(pdfBytes);
+    const safeName = applicantName ? applicantName.replace(/\s+/g, '_') : "Unknown";
+    const finalFileName = `${typeKey}_${safeName}.pdf`;
+
+    // --- NEW: EXECUTE DRIVE UPLOAD IF CHECKED ---
+    if (options?.saveToDrive) {
+        try {
+            await uploadToDrive(pdfBuffer, finalFileName);
+            console.log(`Successfully uploaded ${finalFileName} to Google Drive.`);
+        } catch (uploadError) {
+            console.error("Google Drive Upload Failed:", uploadError);
+        }
+    }
 
     return new NextResponse(pdfBuffer, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${applicantName}_Certificate.pdf"`,
+        'Content-Disposition': `attachment; filename="${finalFileName}"`,
       },
     });
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error("PDF Generation Error:", error);
     return NextResponse.json({ error: "Failed to generate PDF" }, { status: 500 });
