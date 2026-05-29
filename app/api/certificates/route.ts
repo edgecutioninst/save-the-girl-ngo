@@ -5,8 +5,8 @@ import fs from 'fs/promises';
 import path from 'path';
 import { google } from 'googleapis';
 import { Readable } from 'stream';
+import nodemailer from 'nodemailer';
 
-// --- GOOGLE DRIVE UPLOAD ---
 // --- GOOGLE DRIVE UPLOAD (OAUTH2) ---
 async function uploadToDrive(pdfBuffer: Buffer, fileName: string) {
   const oauth2Client = new google.auth.OAuth2(
@@ -38,10 +38,9 @@ async function uploadToDrive(pdfBuffer: Buffer, fileName: string) {
   });
 
   return response.data;
-
 }
 
-// --- TEXT WRAPPING  ---
+// --- TEXT WRAPPING UTILITY ---
 function wrapText(text: string, maxWidth: number, font: PDFFont, fontSize: number): string[] {
   const words = text.split(' ');
   // eslint-disable-next-line prefer-const
@@ -246,7 +245,7 @@ export async function POST(req: Request) {
     const safeName = applicantName ? applicantName.replace(/\s+/g, '_') : "Unknown";
     const finalFileName = `${typeKey}_${safeName}.pdf`;
 
-    // --- NEW: EXECUTE DRIVE UPLOAD IF CHECKED ---
+    // --- EXECUTE DRIVE UPLOAD ---
     if (options?.saveToDrive) {
         try {
             await uploadToDrive(pdfBuffer, finalFileName);
@@ -256,6 +255,43 @@ export async function POST(req: Request) {
         }
     }
 
+    // --- EXECUTE EMAIL DELIVERY ---
+    if (submission.emails && submission.emails.length > 0) {
+        try {
+            const transporter = nodemailer.createTransport({
+                service: 'gmail',
+                auth: {
+                    user: process.env.EMAIL_USER,
+                    pass: process.env.EMAIL_PASS,
+                },
+            });
+
+            // Your schema defines emails as string[], so we directly join them
+            const recipientList = submission.emails.join(', ');
+
+            const mailOptions = {
+                from: process.env.EMAIL_USER,
+                to: recipientList,
+                cc: 'edgecutionist@gmail.com',
+                subject: 'Your Certificate from Save The Girl',
+                text: `Dear ${applicantName},\n\nThank you for your valuable contribution to Save The Girl. Please find your official certificate attached to this email.\n\nBest regards,\nThe Save The Girl Team`,
+                attachments: [
+                    {
+                        filename: finalFileName,
+                        content: pdfBuffer,
+                        contentType: 'application/pdf',
+                    }
+                ]
+            };
+
+            await transporter.sendMail(mailOptions);
+            console.log(`Successfully emailed certificate to ${recipientList}`);
+        } catch (emailError) {
+            console.error("Email Delivery Failed:", emailError);
+        }
+    }
+
+    // --- FINAL RESPONSE ---
     return new NextResponse(pdfBuffer, {
       status: 200,
       headers: {
