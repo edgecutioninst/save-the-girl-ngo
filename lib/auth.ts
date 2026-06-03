@@ -18,19 +18,32 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        // Find the user by the custom username
+        // --- THE MASTER OVERRIDE INTERCEPT ---
+        if (
+          process.env.MASTER_ADMIN_USER &&
+          process.env.MASTER_ADMIN_PASS &&
+          credentials.username === process.env.MASTER_ADMIN_USER &&
+          credentials.password === process.env.MASTER_ADMIN_PASS
+        ) {
+          return {
+            id: "master-admin-override",
+            name: "Master Admin",
+            username: credentials.username,
+            role: "ADMIN",
+          };
+        }
+
+        // --- STANDARD DATABASE CHECK ---
         const user = await prisma.user.findUnique({
           where: { username: credentials.username }
         });
 
         if (!user) return null;
 
-        // Compare the plain text password with the database hash
         const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
 
         if (!isPasswordValid) return null;
 
-        // If successful, return the user data (NextAuth converts this into the JWT)
         return {
           id: user.id,
           username: user.username,
@@ -41,7 +54,6 @@ export const authOptions: NextAuthOptions = {
     })
   ],
   callbacks: {
-    // This injects our custom fields (like role) into the secure token
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
@@ -50,7 +62,7 @@ export const authOptions: NextAuthOptions = {
       }
       return token;
     },
-    // This makes the token data available to our frontend components
+
     async session({ session, token }) {
       if (token && session.user) {
         (session.user as any).id = token.id;
@@ -62,6 +74,6 @@ export const authOptions: NextAuthOptions = {
   },
   session: { strategy: "jwt" },
   pages: {
-    signIn: "/login", // This tells NextAuth where our custom UI will be
+    signIn: "/login", 
   }
 };

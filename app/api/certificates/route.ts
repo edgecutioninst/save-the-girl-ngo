@@ -61,6 +61,29 @@ function wrapText(text: string, maxWidth: number, font: PDFFont, fontSize: numbe
   return lines;
 }
 
+// --- DYNAMIC FONT SCALING ---
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function drawScaledCenteredText(page: any, text: string, font: PDFFont, defaultSize: number, maxWidth: number, centerX: number, yPos: number, color: any) {
+  let currentSize = defaultSize;
+  let textWidth = font.widthOfTextAtSize(text, currentSize);
+
+  // Shrink font size proportionally if it exceeds the line width
+  if (textWidth > maxWidth) {
+    currentSize = (maxWidth / textWidth) * defaultSize;
+    textWidth = font.widthOfTextAtSize(text, currentSize);
+  }
+
+  const startX = centerX - (textWidth / 2);
+  
+  page.drawText(text, { 
+    x: startX, 
+    y: yPos, 
+    size: currentSize, 
+    font: font, 
+    color: color 
+  });
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -110,9 +133,10 @@ export async function POST(req: Request) {
     switch (typeKey) {
       case 'VOLUNTEER':
         page.drawText(generationDate, { x: 160, y: 1137, size: 28, font: boldFont, color: textColor });
+        
         const volNameText = applicantName || "Unknown Name";
-        const volNameWidth = boldFont.widthOfTextAtSize(volNameText, 56);
-        page.drawText(volNameText, { x: center - (volNameWidth / 2), y: 787, size: 56, font: boldFont, color: textColor });
+        drawScaledCenteredText(page, volNameText, boldFont, 56, 750, center, 787, textColor);
+        
         const volRoleText = postRole || "Volunteer";
         const volRoleWidth = boldFont.widthOfTextAtSize(volRoleText, 36);
         page.drawText(volRoleText, { x: center - (volRoleWidth / 2), y: 532, size: 36, font: boldFont, color: textColor });
@@ -122,9 +146,10 @@ export async function POST(req: Request) {
 
       case 'INTERN':
         page.drawText(generationDate, { x: 182, y: 870, size: 28, font: boldFont, color: textColor });
+        
         const internNameText = applicantName || "Unknown Name";
-        const internNameWidth = boldFont.widthOfTextAtSize(internNameText, 56);
-        page.drawText(internNameText, { x: center - (internNameWidth / 2), y: 773, size: 56, font: boldFont, color: textColor });
+        drawScaledCenteredText(page, internNameText, boldFont, 56, 1200, center, 773, textColor);
+        
         const internRoleText = postRole || "Intern";
         const internRoleWidth = boldFont.widthOfTextAtSize(internRoleText, 36);
         page.drawText(internRoleText, { x: center - (internRoleWidth / 2), y: 565, size: 36, font: boldFont, color: textColor });
@@ -136,9 +161,8 @@ export async function POST(req: Request) {
         page.drawText(generationDate, { x: 291, y: 1108, size: 28, font: boldFont, color: textColor });
         
         const visName = applicantName || "Unknown Name";
-        const visNameWidth = boldFont.widthOfTextAtSize(visName, 48);
         const nameLineCenter = 1165 + ((rightMarginX - 1165) / 2);
-        page.drawText(visName, { x: nameLineCenter - (visNameWidth / 2), y: 935, size: 48, font: boldFont, color: textColor });
+        drawScaledCenteredText(page, visName, boldFont, 48, 650, nameLineCenter, 935, textColor);
 
         const visitDateStr = formatDt(submission.visitDate);
         const facilityStr = submission.centerVisited || "Our Center";
@@ -174,9 +198,8 @@ export async function POST(req: Request) {
         page.drawText(formatDt(submission.createdAt), { x: 250, y: 920, size: 28, font: boldFont, color: textColor });
 
         const donorNameText = applicantName || "Unknown Name";
-        const donorNameWidth = boldFont.widthOfTextAtSize(donorNameText, 64);
         const donorNameLineCenter = 496 + ((rightMarginX - 496) / 2);
-        page.drawText(donorNameText, { x: donorNameLineCenter - (donorNameWidth / 2), y: 769, size: 64, font: boldFont, color: textColor });
+        drawScaledCenteredText(page, donorNameText, boldFont, 64, 900, donorNameLineCenter, 769, textColor);
 
         let donorDonationStr = "N/A";
         const donorItems = submission.itemsDonated as { item: string, quantity: number }[] | null;
@@ -206,9 +229,8 @@ export async function POST(req: Request) {
         page.drawText(formatDt(hostDate), { x: 158, y: 1092, size: 34, font: boldFont, color: textColor });
 
         const hostName = applicantName || "Unknown Name";
-        const hostNameWidth = boldFont.widthOfTextAtSize(hostName, 48);
         const hostNameLineCenter = 1064 + ((rightMarginX - 1064) / 2);
-        page.drawText(hostName, { x: hostNameLineCenter - (hostNameWidth / 2), y: 898, size: 48, font: boldFont, color: textColor });
+        drawScaledCenteredText(page, hostName, boldFont, 48, 750, hostNameLineCenter, 898, textColor);
 
         const hostFacilityStr = (submission.facilityLocation || "Our Center").toUpperCase();
         const hostFacWidth = boldFont.widthOfTextAtSize(hostFacilityStr, 38);
@@ -298,6 +320,7 @@ export async function POST(req: Request) {
             const mailOptions: any = {
                 from: process.env.EMAIL_USER,
                 to: options.targetEmail, 
+                replyTo: "placeholder@gmail.com", 
                 subject: `Thank you from Save The Girl! 🌸 Your Certificate of ${displayActivity} Inside`,
                 html: emailHtml,
                 attachments: [
