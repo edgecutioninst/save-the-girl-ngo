@@ -6,7 +6,7 @@ import { authOptions } from "@/lib/auth";
 
 export async function POST(request: Request) {
   try {
-    // 1. Get the session directly from the server, ignoring whatever the frontend claims
+    // Get the session directly from the server
     const session = await getServerSession(authOptions);
     const userRole = (session?.user as any)?.role;
 

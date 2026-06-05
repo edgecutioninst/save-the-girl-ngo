@@ -13,7 +13,6 @@ import {
   GraduationCap, 
   HandHeart,
   LogOut,
-  MapPin,
   Settings
 } from "lucide-react";
 
@@ -30,7 +29,6 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
 
-  // Hide sidebar completely on the login page
   if (pathname === "/login") {
     return null;
   }

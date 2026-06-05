@@ -7,7 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// --- ENUMS (Strict types for your dropdowns) ---
+// --- ENUMS ---
 enum Role {
   ADMIN
   STAFF

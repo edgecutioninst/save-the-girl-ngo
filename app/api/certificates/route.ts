@@ -7,7 +7,7 @@ import { google } from 'googleapis';
 import { Readable } from 'stream';
 import nodemailer from 'nodemailer';
 
-// --- GOOGLE DRIVE UPLOAD (OAUTH2) ---
+// --- GOOGLE DRIVE UPLOAD ---
 async function uploadToDrive(pdfBuffer: Buffer, fileName: string) {
   const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
@@ -40,7 +40,7 @@ async function uploadToDrive(pdfBuffer: Buffer, fileName: string) {
   return response.data;
 }
 
-// --- TEXT WRAPPING UTILITY ---
+// --- TEXT WRAPPING ---
 function wrapText(text: string, maxWidth: number, font: PDFFont, fontSize: number): string[] {
   const words = text.split(' ');
   // eslint-disable-next-line prefer-const
@@ -94,7 +94,7 @@ export async function POST(req: Request) {
     const submission = await prisma.submission.findUnique({ where: { id } });
     if (!submission) return NextResponse.json({ error: "Submission not found" }, { status: 404 });
 
-    // 1. Dynamic Template Routing
+    // Dynamic Template Routing
     const templateMap: Record<string, string> = {
       'VOLUNTEER': 'volunteer.png',
       'INTERN': 'intern.png',
@@ -110,17 +110,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: `Unsupported certificate type: ${typeKey}` }, { status: 400 });
     }
 
-    // 2. Load Template
+    // Load Template
     const templatePath = path.join(process.cwd(), 'public', 'templates', fileName);
     const templateBytes = await fs.readFile(templatePath);
 
-    // 3. Initialize PDF
+    // Initialize PDF
     const pdfDoc = await PDFDocument.create();
     const bgImage = await pdfDoc.embedPng(templateBytes);
     const page = pdfDoc.addPage([bgImage.width, bgImage.height]);
     page.drawImage(bgImage, { x: 0, y: 0, width: bgImage.width, height: bgImage.height });
 
-    // 4. Embed Bold Font & Prepare Text Data
+    // Embed Bold Font & Prepare Text Data
     const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
     const { applicantName, postRole, startDate, endDate } = submission;
     const textColor = rgb(0.1, 0.1, 0.1);
@@ -261,7 +261,7 @@ export async function POST(req: Request) {
         break;
     }
 
-    // 5. Save Buffer
+    // Save Buffer
     const pdfBytes = await pdfDoc.save();
     const pdfBuffer = Buffer.from(pdfBytes);
     const safeName = applicantName ? applicantName.replace(/\s+/g, '_') : "Unknown";
@@ -288,7 +288,7 @@ export async function POST(req: Request) {
                 },
             });
 
-            // Format raw typeKey (e.g., 'VOLUNTEER' -> 'Volunteer')
+            // Format raw typeKey
             const displayActivity = submission.certificateType 
                 ? submission.certificateType.charAt(0).toUpperCase() + submission.certificateType.slice(1).toLowerCase() 
                 : "Contribution";

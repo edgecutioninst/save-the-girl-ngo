@@ -21,8 +21,7 @@ export default withAuth(
   }
 );
 
-// Define exactly which routes this middleware should protect
 export const config = {
-  // This Regex protects EVERY page EXCEPT the login page, the auth API, and static files like your logo
+  // This Regex protects EVERY page EXCEPT the login page, the auth API, and static files
   matcher: ["/((?!login|api/auth|_next/static|_next/image|favicon.ico|logo.png).*)"],
 };

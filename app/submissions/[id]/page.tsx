@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import SubmissionControls from "@/modules/submissions/SubmissionControls";
 
-// --- HELPER COMPONENT ---
+// --- HELPER  ---
 // block if the value is null or undefined
 const DetailItem = ({ icon: Icon, label, value }: { icon: any, label: string, value: any }) => {
   if (value === null || value === undefined || value === '') return null;
@@ -30,14 +30,14 @@ const DetailItem = ({ icon: Icon, label, value }: { icon: any, label: string, va
   );
 };
 
-// Next.js Server Component
+// Server Component
 export default async function SubmissionDetailPage({ params }: { params: Promise<{ id: string }> }) {
   
-  // 1. AWAIT THE PARAMS (The Next.js 15 Fix)
+  // await PARAMS 
   const resolvedParams = await params;
   const submissionId = resolvedParams.id;
 
-  // 2. Fetch directly from the database
+  // Fetch directly from the database
   const submission = await prisma.submission.findUnique({
     where: { id: submissionId },
   });
@@ -84,10 +84,10 @@ export default async function SubmissionDetailPage({ params }: { params: Promise
           applicantEmail={submission.emails?.[0]} 
         />
 
-        {/* --- MAIN DATA GRID --- */}
+        {/* --- MAIN DATA --- */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
-          {/* LEFT COLUMN: Identity & Contact (1/3 width) */}
+          {/* Identity & Contact */}
           <div className="space-y-6">
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
               <div className="h-16 w-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-4">
@@ -134,7 +134,7 @@ export default async function SubmissionDetailPage({ params }: { params: Promise
               </div>
             </div>
 
-            {/* Financial Summary Card (Only shows if helpedFinancially is true) */}
+            {/* Financial Summary Card ( if helpedFinancially ) */}
             {submission.helpedFinancially && (
               <div className="bg-linear-to-br from-green-50 to-emerald-50 rounded-xl shadow-sm border border-green-200 p-6">
                 <h3 className="text-sm font-bold text-green-800 uppercase tracking-wider mb-2 flex items-center gap-2">
@@ -146,7 +146,7 @@ export default async function SubmissionDetailPage({ params }: { params: Promise
             )}
           </div>
 
-          {/* RIGHT COLUMN: Operational Data (2/3 width) */}
+          {/* Operational Data */}
           <div className="lg:col-span-2 space-y-6">
             
             {/* Contextual Details Grid */}

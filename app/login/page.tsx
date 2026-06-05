@@ -28,7 +28,7 @@ export default function LoginPage() {
       setIsLoading(false);
     } else {
       router.push("/"); // Redirect to the dashboard on success
-      router.refresh(); // Force Next.js to update the session state
+      router.refresh(); // update the session state
     }
   };
 

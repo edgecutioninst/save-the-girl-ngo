@@ -6,7 +6,7 @@ import { useForm, SubmitHandler } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { X, Plus, Loader2 } from "lucide-react";
 
-// --- CUSTOM INPUT COMPONENTS ---
+// --- CUSTOM INPUT ---
 
 const TagInput = ({ label, placeholder, tags, setTags }: { label: string, placeholder: string, tags: string[], setTags: (tags: string[]) => void }) => {
   const [inputValue, setInputValue] = useState("");
@@ -255,7 +255,7 @@ export default function DonationCertificatePage() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="bg-white p-8 rounded-lg border border-slate-200 shadow-sm space-y-8">
         
-        {/* Section 1: Donor Basics */}
+        {/* Donor Basics */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">Donor Name<span className="text-red-500 ml-1">*</span></label>
@@ -281,7 +281,7 @@ export default function DonationCertificatePage() {
 
         <hr className="border-slate-200" />
 
-        {/* Section 2: Logistics Engine */}
+        {/* Logistics Engine */}
         <div className="bg-slate-50 p-6 rounded-lg border border-slate-200 space-y-6">
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-900">Logistics Method<span className="text-red-500 ml-1">*</span></label>
@@ -345,7 +345,7 @@ export default function DonationCertificatePage() {
 
         <hr className="border-slate-200" />
 
-        {/* Section 3: Inventory */}
+        {/* Inventory */}
         <div className="space-y-6">
           <KeyValueInput items={donatedItems} setItems={setDonatedItems} />
         </div>

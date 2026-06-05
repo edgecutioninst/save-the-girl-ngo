@@ -6,7 +6,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/db/prisma";
 import { authOptions } from "@/lib/auth";
 
-// READ: Fetch all users
+// Fetch all users
 export async function GET() {
   const session = await getServerSession(authOptions);
   
@@ -32,7 +32,7 @@ export async function GET() {
   }
 }
 
-// CREATE: Add a new user
+// CREATE: 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   
@@ -66,7 +66,7 @@ export async function POST(req: Request) {
   }
 }
 
-// UPDATE: Modify an existing user (or reset password)
+// UPDATE: 
 export async function PUT(req: Request) {
   const session = await getServerSession(authOptions);
   if ((session?.user as any)?.role !== "ADMIN") return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
@@ -98,7 +98,7 @@ export async function PUT(req: Request) {
   }
 }
 
-// DELETE: Remove a user
+// DELETE: 
 export async function DELETE(req: Request) {
   const session = await getServerSession(authOptions);
   

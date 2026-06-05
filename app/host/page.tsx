@@ -158,7 +158,7 @@ export default function HostCertificatePage() {
 
   const currentHelpedFinancially = watch("helpedFinancially");
 
-  // --- NEW: Fetch Centers on Mount ---
+  // --- Fetch Centers on Mount ---
   useEffect(() => {
     const fetchCenters = async () => {
       try {
@@ -239,7 +239,7 @@ export default function HostCertificatePage() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="bg-white p-8 rounded-lg border border-slate-200 shadow-sm space-y-8">
         
-        {/* Section 1: Host Basics */}
+        {/* Host Basics */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">Name of Host<span className="text-red-500 ml-1">*</span></label>
@@ -280,7 +280,7 @@ export default function HostCertificatePage() {
 
         <hr className="border-slate-200" />
 
-        {/* Section 2: Dynamic Contact Arrays */}
+        {/* Dynamic Contact Arrays */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <TagInput label="Phone Numbers *" placeholder="Enter phone and press Enter" tags={phones} setTags={setPhones} />
           <TagInput label="Email Addresses (Optional)" placeholder="Enter email and press Enter" tags={emails} setTags={setEmails} />
@@ -288,7 +288,7 @@ export default function HostCertificatePage() {
 
         <hr className="border-slate-200" />
 
-        {/* Section 3: Event Specifics */}
+        {/* Event Specifics */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           
           {/* --- NEW: Dynamic Dropdown UI --- */}
@@ -327,7 +327,7 @@ export default function HostCertificatePage() {
 
         <hr className="border-slate-200" />
 
-        {/* Section 4: Post-Event Data */}
+        {/* Post-Event Data */}
         <div className="grid grid-cols-1 gap-6">
           <KeyValueInput items={donatedItems} setItems={setDonatedItems} />
           

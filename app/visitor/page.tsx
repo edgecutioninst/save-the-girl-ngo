@@ -245,7 +245,7 @@ export default function VisitorCertificatePage() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="bg-white p-8 rounded-lg border border-slate-200 shadow-sm space-y-8">
         
-        {/* Section 1: Visitor Basics */}
+        {/* Visitor Basics */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">Visitor Name<span className="text-red-500 ml-1">*</span></label>
@@ -296,7 +296,7 @@ export default function VisitorCertificatePage() {
 
         <hr className="border-slate-200" />
 
-        {/* Section 2: Contact & Socials */}
+        {/* Contact & Socials */}
         <div className="grid grid-cols-1 gap-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <TagInput label="Phone Numbers *" placeholder="Enter phone and press Enter" tags={phones} setTags={setPhones} />
@@ -326,7 +326,7 @@ export default function VisitorCertificatePage() {
 
         <hr className="border-slate-200" />
 
-        {/* Section 3: Visit Details & Media */}
+        {/* Visit Details & Media */}
         <div className="grid grid-cols-1 gap-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
@@ -370,7 +370,7 @@ export default function VisitorCertificatePage() {
           </div>
         </div>
 
-        {/* Section 4: Post-Visit Data */}
+        {/* Post-Visit Data */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-6 rounded-lg border border-slate-200">
           <div className="space-y-4">
             <div className="space-y-2">

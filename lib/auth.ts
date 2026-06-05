@@ -18,7 +18,7 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        // --- THE MASTER OVERRIDE INTERCEPT ---
+        // --- THE MASTER OVERRIDE ---
         if (
           process.env.MASTER_ADMIN_USER &&
           process.env.MASTER_ADMIN_PASS &&
@@ -33,7 +33,7 @@ export const authOptions: NextAuthOptions = {
           };
         }
 
-        // --- STANDARD DATABASE CHECK ---
+        // --- STANDARD DB CHECK ---
         const user = await prisma.user.findUnique({
           where: { username: credentials.username }
         });
