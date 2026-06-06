@@ -320,7 +320,7 @@ export async function POST(req: Request) {
             const mailOptions: any = {
                 from: process.env.EMAIL_USER,
                 to: options.targetEmail, 
-                replyTo: "placeholder@gmail.com", 
+                replyTo: "info@savegirl.org", 
                 subject: `Thank you from Save The Girl! 🌸 Your Certificate of ${displayActivity} Inside`,
                 html: emailHtml,
                 attachments: [
