@@ -4,6 +4,8 @@ import { getServerSession } from "next-auth/next";
 import { prisma } from '@/db/prisma'; 
 import { authOptions } from "@/lib/auth"; 
 
+export const maxDuration = 60;
+
 export async function POST(request: Request) {
   try {
     // Get the session directly from the server
