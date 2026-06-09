@@ -48,9 +48,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
+    // UNIQUE CHECK
     const existingUser = await prisma.user.findUnique({ where: { username } });
     if (existingUser) {
-      return NextResponse.json({ error: "Username already taken" }, { status: 400 });
+      return NextResponse.json({ error: "User ID (Username) is already taken" }, { status: 400 });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -75,10 +76,17 @@ export async function PUT(req: Request) {
     const { id, name, username, password, role } = await req.json();
     if (!id) return NextResponse.json({ error: "User ID required" }, { status: 400 });
 
+    // UNIQUE CHECK 
+    if (username) {
+      const existingUser = await prisma.user.findUnique({ where: { username } });
+      if (existingUser && existingUser.id !== id) {
+        return NextResponse.json({ error: "User ID is already in use by another team member" }, { status: 400 });
+      }
+    }
+
     // Base update data
     const updateData: any = { name, username };
 
-    // HARD LOCK: Only update the role if the admin is NOT editing themselves
     if (id !== (session?.user as any)?.id) {
       updateData.role = role;
     }
@@ -106,14 +114,30 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
+  const currentSessionId = (session?.user as any)?.id;
+  const currentUsername = (session?.user as any)?.username;
+
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
 
     if (!id) return NextResponse.json({ error: "User ID is required" }, { status: 400 });
 
-    if (id === (session?.user as any)?.id) {
-      return NextResponse.json({ error: "Critical: You cannot delete your own admin account." }, { status: 403 });
+    // LOCK 1 - self Delete
+    if (id === currentSessionId) {
+      return NextResponse.json({ error: "Critical: You cannot delete your own account." }, { status: 403 });
+    }
+
+    // Fetch the target user to see what role they have
+    const targetUser = await prisma.user.findUnique({ where: { id }, select: { role: true } });
+    if (!targetUser) return NextResponse.json({ error: "User not found" }, { status: 404 });
+
+    // Check if the current user is the Master Admin (from NextAuth env variables)
+    const isMasterAdmin = currentSessionId === "master-admin-override" || currentUsername === process.env.MASTER_ADMIN_USER;
+
+    // LOCK 2 - Admin Deletion
+    if (targetUser.role === "ADMIN" && !isMasterAdmin) {
+      return NextResponse.json({ error: "Permission Denied: Only the Master Admin can delete other Admins." }, { status: 403 });
     }
 
     await prisma.user.delete({ where: { id } });

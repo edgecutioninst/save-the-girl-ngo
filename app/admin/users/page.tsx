@@ -5,6 +5,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { UserPlus, Shield, Trash2, Edit2, Loader2, User } from "lucide-react";
+import toast from "react-hot-toast";
 
 type UserData = {
   id: string;
@@ -17,12 +18,15 @@ type UserData = {
 export default function ManageUsersPage() {
   const { data: session } = useSession();
   const currentUserId = (session?.user as any)?.id;
+  
+  const isMasterAdmin = currentUserId === "master-admin-override";
 
   const [users, setUsers] = useState<UserData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     id: "",
@@ -65,16 +69,26 @@ export default function ManageUsersPage() {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to revoke this user's access permanently?")) return;
+  const initiateDelete = (id: string) => {
+    setUserToDelete(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!userToDelete) return;
+    
+    const toastId = toast.loading("Deleting user..."); 
     
     try {
-      const res = await fetch(`/api/users?id=${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/users?id=${userToDelete}`, { method: "DELETE" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
+      
       fetchUsers();
+      toast.success("User deleted successfully!", { id: toastId });
     } catch (err: any) {
-      alert(err.message);
+      toast.error(err.message, { id: toastId });
+    } finally {
+      setUserToDelete(null);
     }
   };
 
@@ -98,8 +112,12 @@ export default function ManageUsersPage() {
 
       setIsModalOpen(false);
       fetchUsers();
+      
+      toast.success(editMode ? "User updated successfully!" : "User created successfully!");
+      
     } catch (err: any) {
       setError(err.message);
+      toast.error("Failed to save user."); 
     } finally {
       setIsSubmitting(false);
     }
@@ -138,52 +156,62 @@ export default function ManageUsersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {users.map((user) => (
-                <tr key={user.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-6 py-4 font-medium text-slate-900 flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
-                      <User className="h-4 w-4" />
-                    </div>
-                    {user.name}
-                  </td>
-                  <td className="px-6 py-4 font-mono text-xs">{user.username}</td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
-                      user.role === "ADMIN" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"
-                    }`}>
-                      {user.role === "ADMIN" && <Shield className="h-3 w-3" />}
-                      {user.role}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-slate-500">
-                    {new Date(user.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button 
-                        onClick={() => openEditModal(user)}
-                        className="text-slate-400 hover:text-blue-600 transition-colors p-2 rounded-lg hover:bg-blue-50"
-                        title="Edit User"
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </button>
-                      
-                      <button 
-                        onClick={() => handleDelete(user.id)}
-                        disabled={user.id === currentUserId}
-                        className={`p-2 rounded-lg transition-colors ${
-                          user.id === currentUserId 
-                            ? "text-slate-300 cursor-not-allowed" 
-                            : "text-slate-400 hover:text-red-600 hover:bg-red-50"
-                        }`}
-                        title={user.id === currentUserId ? "You cannot delete yourself" : "Delete User"}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {users.map((user) => {
+                const isSelf = user.id === currentUserId;
+                const isTargetAdmin = user.role === "ADMIN";
+                const canDelete = !isSelf && (!isTargetAdmin || isMasterAdmin);
+
+                return (
+                  <tr key={user.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-6 py-4 font-medium text-slate-900 flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
+                        <User className="h-4 w-4" />
+                      </div>
+                      {user.name}
+                    </td>
+                    <td className="px-6 py-4 font-mono text-xs">{user.username}</td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
+                        user.role === "ADMIN" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"
+                      }`}>
+                        {user.role === "ADMIN" && <Shield className="h-3 w-3" />}
+                        {user.role}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-slate-500">
+                      {new Date(user.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button 
+                          onClick={() => openEditModal(user)}
+                          className="text-slate-400 hover:text-blue-600 transition-colors p-2 rounded-lg hover:bg-blue-50"
+                          title="Edit User"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </button>
+                        
+                        <button 
+                          onClick={() => initiateDelete(user.id)}
+                          disabled={!canDelete}
+                          className={`p-2 rounded-lg transition-colors ${
+                            !canDelete 
+                              ? "text-slate-300 cursor-not-allowed" 
+                              : "text-slate-400 hover:text-red-600 hover:bg-red-50"
+                          }`}
+                          title={
+                            isSelf 
+                              ? "You cannot delete yourself" 
+                              : (!canDelete ? "Only Master Admin can delete Admins" : "Delete User")
+                          }
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
               
               {users.length === 0 && (
                 <tr>
@@ -284,6 +312,34 @@ export default function ManageUsersPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {userToDelete && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full overflow-hidden border border-slate-100 p-6 text-center">
+            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+              <Trash2 className="h-6 w-6 text-red-600" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-900 mb-2">Delete User?</h3>
+            <p className="text-sm text-slate-500 mb-6">
+              Are you sure you want to revoke the access of this user permanently? This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setUserToDelete(null)}
+                className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
           </div>
         </div>
       )}

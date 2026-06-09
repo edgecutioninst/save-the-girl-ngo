@@ -127,7 +127,7 @@ export async function POST(req: Request) {
     
     const formatDt = (dt: Date | null) => dt ? new Date(dt).toLocaleDateString('en-IN') : 'N/A';
     const generationDate = new Date().toLocaleDateString('en-IN');
-    const center = 1000; 
+    const center = 1030; 
     const rightMarginX = 1850; 
 
     switch (typeKey) {
@@ -135,7 +135,7 @@ export async function POST(req: Request) {
         page.drawText(generationDate, { x: 160, y: 1137, size: 28, font: boldFont, color: textColor });
         
         const volNameText = applicantName || "Unknown Name";
-        drawScaledCenteredText(page, volNameText, boldFont, 56, 750, center, 787, textColor);
+        drawScaledCenteredText(page, volNameText, boldFont, 56, 775, center, 770, textColor);
         
         const volRoleText = postRole || "Volunteer";
         const volRoleWidth = boldFont.widthOfTextAtSize(volRoleText, 36);
