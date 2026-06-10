@@ -23,7 +23,7 @@ export async function PATCH(request: Request) {
       data: { centers }
     });
 
-    revalidatePath('/settings'); 
+    revalidatePath('/admin/settings'); 
     
 
     return NextResponse.json({ success: true, data: updatedSettings });
