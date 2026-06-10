@@ -17,6 +17,7 @@ export async function PATCH(request: Request) {
     if (!existingSettings) {
       return NextResponse.json({ success: false, error: "Settings not initialized" }, { status: 404 });
     }
+    
 
     const updatedSettings = await prisma.settings.update({
       where: { id: existingSettings.id },
