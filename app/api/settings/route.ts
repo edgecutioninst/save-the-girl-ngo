@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { NextResponse } from 'next/server';
 import { prisma } from '@/db/prisma';
+import { revalidatePath } from 'next/cache'; 
 
 export async function PATCH(request: Request) {
   try {
@@ -23,21 +23,12 @@ export async function PATCH(request: Request) {
       data: { centers }
     });
 
+    revalidatePath('/settings'); 
+    
+
     return NextResponse.json({ success: true, data: updatedSettings });
   } catch (error: any) {
     console.error("Settings Update Error:", error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
-  }
-}
-
-export async function GET() {
-  try {
-    const settings = await prisma.settings.findFirst();
-    const centers = settings?.centers || [];
-    
-    return NextResponse.json({ success: true, data: centers });
-  } catch (error: any) {
-    console.error("Fetch Settings Error:", error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

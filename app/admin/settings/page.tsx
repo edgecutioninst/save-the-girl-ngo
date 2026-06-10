@@ -1,11 +1,12 @@
 import CenterManager from "@/modules/center-manager/CenterManager";
 import { prisma } from "@/db/prisma";
 
+export const dynamic = 'force-dynamic'; 
+
 export default async function SettingsPage() {
   // Fetch the global settings row
   let settings = await prisma.settings.findFirst();
 
-  // If the database is completely fresh, create a default row
   if (!settings) {
     settings = await prisma.settings.create({
       data: {
