@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 
 const routes = [
-  { label: "Manage Users", icon: LayoutDashboard, href: "/" },
+  { label: "Dashboard", icon: LayoutDashboard, href: "/" },
   { label: "Host Certificate", icon: Users, href: "/host" },
   { label: "Visitor Certificate", icon: UserPlus, href: "/visitor" },
   { label: "Donation Certificate", icon: HeartHandshake, href: "/donation" },

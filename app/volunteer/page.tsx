@@ -1,8 +1,8 @@
-/* eslint-disable react-hooks/incompatible-library */
 'use client';
 
 import { useState } from "react";
 import { useForm, SubmitHandler } from 'react-hook-form';
+import { useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 import SubmissionControls from "@/modules/submissions/SubmissionControls";
 
@@ -29,6 +29,8 @@ export default function VolunteerCertificatePage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [savedRecord, setSavedRecord] = useState<any>(null);
 
+  const searchParams = useSearchParams();
+
   const { 
     register, 
     handleSubmit, 
@@ -37,10 +39,16 @@ export default function VolunteerCertificatePage() {
     formState: { isSubmitting, errors } 
   } = useForm<VolunteerFormInputs>({
     defaultValues: {
-      donationType: 'No' // Set default to No as requested
+      donationType: 'No',
+      applicantName: searchParams.get('name') || '',
+      email: searchParams.get('email') || '',
+      phone: searchParams.get('phone') || '',
+      gender: searchParams.get('gender') || 'Male',
+      universityName: searchParams.get('university') || '',
     }
   });
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const currentDonationType = watch("donationType");
 
   const onSubmit: SubmitHandler<VolunteerFormInputs> = async (data) => {
@@ -61,7 +69,7 @@ export default function VolunteerCertificatePage() {
 
       if (response.ok) {
         toast.success("Volunteer data saved successfully!", { id: toastId });
-        setSavedRecord(json.data); // Save the response so the controls appear/trigger modal
+        setSavedRecord(json.data); 
         reset(); 
       } else {
         toast.error(`Failed to save: ${json.error || 'Unknown error'}`, { id: toastId });
@@ -200,7 +208,6 @@ export default function VolunteerCertificatePage() {
         {/* Additional Data */}
         <div className="grid grid-cols-1 gap-6">
           <div className="space-y-2">
-            {/* REMOVED REQUIRED FLAG AS REQUESTED */}
             <label className="text-sm font-medium text-slate-700">University Name</label>
             <input 
               {...register("universityName")} 

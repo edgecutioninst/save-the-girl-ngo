@@ -456,6 +456,17 @@ export async function POST(req: Request) {
 
             await transporter.sendMail(mailOptions);
             console.log(`Successfully emailed certificate to ${options.targetEmail}`);
+
+            try {
+                await prisma.submission.update({
+                    where: { id: id },
+                    data: { lastSentEmail: new Date() }
+                });
+                console.log(`Successfully updated lastSentEmail for submission ${id}`);
+            } catch (dbError) {
+                console.error("Failed to update lastSentEmail in database:", dbError);
+            }
+
         } catch (emailError) {
             console.error("Email Delivery Failed:", emailError);
         }

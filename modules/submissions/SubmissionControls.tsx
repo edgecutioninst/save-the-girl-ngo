@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { CheckCircle2, XCircle, Clock, FileBadge, Loader2, Mail, HardDrive, Download, Plus } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, FileBadge, Loader2, Mail, HardDrive, Download, Plus, Check } from "lucide-react";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 
@@ -26,6 +26,7 @@ interface ControlProps {
   hideStatusToggle?: boolean;
   hideTriggerButton?: boolean;
   autoOpenModal?: boolean;
+  lastSent?: Date | string | null; 
   onCloseModal?: () => void;
 }
 
@@ -38,12 +39,16 @@ export default function SubmissionControls({
   hideStatusToggle = false,
   hideTriggerButton = false,
   autoOpenModal = false,
+  lastSent = null, 
   onCloseModal
 }: ControlProps) {
   const [status, setStatus] = useState(currentStatus);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  const [lastSentState, setLastSentState] = useState(lastSent);
+  
   const router = useRouter();
 
   // --- Auto-Open Effect ---
@@ -57,7 +62,7 @@ export default function SubmissionControls({
   const handleModalOpenChange = (open: boolean) => {
     setIsModalOpen(open);
     if (!open && onCloseModal) {
-      onCloseModal(); // Trigger cleanup in the parent when modal closes
+      onCloseModal(); 
     }
   };
 
@@ -146,7 +151,13 @@ export default function SubmissionControls({
       }
 
       toast.success("Generation complete!", { id: toastId });
-      handleModalOpenChange(false); // Close modal and trigger parent cleanup
+      
+      if (sendEmail) {
+         setLastSentState(new Date());
+         router.refresh();
+      }
+      
+      handleModalOpenChange(false); 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error("PDF Error:", error);
@@ -263,7 +274,6 @@ export default function SubmissionControls({
     </DialogContent>
   );
 
-  // SCENARIO 1: Hidden wrapper (For the Form Pages after saving)
   if (hideStatusToggle && hideTriggerButton) {
     return (
       <Dialog open={isModalOpen} onOpenChange={handleModalOpenChange}>
@@ -272,7 +282,6 @@ export default function SubmissionControls({
     );
   }
 
-  // SCENARIO 2: Full UI (For the Admin Submissions Details Page)
   return (
     <div className="flex flex-wrap items-center gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
       {!hideStatusToggle && (
@@ -285,17 +294,19 @@ export default function SubmissionControls({
       )}
 
       {status === 'APPROVED' && (
-        <Dialog open={isModalOpen} onOpenChange={handleModalOpenChange}>
-          {!hideTriggerButton && (
-            <DialogTrigger asChild>
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
-                <FileBadge className="h-4 w-4" />
-                Generate Certificate
-              </Button>
-            </DialogTrigger>
-          )}
-          {ModalContent}
-        </Dialog>
+        <div className="flex flex-col md:flex-row items-center gap-3">
+            <Dialog open={isModalOpen} onOpenChange={handleModalOpenChange}>
+              {!hideTriggerButton && (
+                <DialogTrigger asChild>
+                  <Button className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
+                    <FileBadge className="h-4 w-4" />
+                    Generate Certificate
+                  </Button>
+                </DialogTrigger>
+              )}
+              {ModalContent}
+            </Dialog>
+        </div>
       )}
     </div>
   );

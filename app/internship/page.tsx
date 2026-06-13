@@ -3,6 +3,7 @@
 
 import { useState } from "react";
 import { useForm, SubmitHandler } from 'react-hook-form';
+import { useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 import SubmissionControls from "@/modules/submissions/SubmissionControls";
 
@@ -28,6 +29,8 @@ type InternFormInputs = {
 export default function InternshipCertificatePage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [savedRecord, setSavedRecord] = useState<any>(null);
+
+  const searchParams = useSearchParams();
   
   const { 
     register, 
@@ -37,7 +40,12 @@ export default function InternshipCertificatePage() {
     formState: { isSubmitting, errors } 
   } = useForm<InternFormInputs>({
     defaultValues: {
-      donationType: 'No' // Changed default as requested
+      donationType: 'No',
+      applicantName: searchParams.get('name') || '',
+      email: searchParams.get('email') || '',
+      phone: searchParams.get('phone') || '',
+      gender: searchParams.get('gender') || 'Male',
+      universityName: searchParams.get('university') || '',
     }
   });
 
@@ -61,7 +69,7 @@ export default function InternshipCertificatePage() {
 
       if (response.ok) {
         toast.success("Intern data saved successfully!", { id: toastId });
-        setSavedRecord(json.data); // Save the response so the controls appear
+        setSavedRecord(json.data); 
         reset(); 
       } else {
         toast.error(`Failed to save: ${json.error || 'Unknown error'}`, { id: toastId });

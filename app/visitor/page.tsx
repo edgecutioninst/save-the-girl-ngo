@@ -4,10 +4,10 @@
 
 import { useState, KeyboardEvent, useEffect, useRef } from "react";
 import { useForm, SubmitHandler } from 'react-hook-form';
+import { useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { X, Plus, Loader2 } from "lucide-react";
 import SubmissionControls from "@/modules/submissions/SubmissionControls";
-
 
 // --- SMART TAG INPUT ---
 const TagInput = ({ label, placeholder, tags, setTags, inputRef, type = "text" }: { label: string, placeholder: string, tags: string[], setTags: (tags: string[]) => void, inputRef: React.MutableRefObject<string>, type?: string }) => {
@@ -133,7 +133,7 @@ type VisitorFormInputs = {
   visitDate: string;
   centerVisited: string;
   attendantName: string;
-  address?: string; // Made optional as requested
+  address?: string; 
   facebook: string;
   instagram: string;
   linkedin: string;
@@ -148,8 +148,13 @@ type VisitorFormInputs = {
 };
 
 export default function VisitorCertificatePage() {
-  const [phones, setPhones] = useState<string[]>([]);
-  const [emails, setEmails] = useState<string[]>([]); 
+  const searchParams = useSearchParams();
+  const paramName = searchParams.get('name') || '';
+  const paramPhone = searchParams.get('phone');
+  const paramEmail = searchParams.get('email');
+
+  const [phones, setPhones] = useState<string[]>(paramPhone ? [paramPhone] : []);
+  const [emails, setEmails] = useState<string[]>(paramEmail ? [paramEmail] : []); 
   const [donatedItems, setDonatedItems] = useState<DonatedItem[]>([]);
   const [visitSure, setVisitSure] = useState(true);
 
@@ -173,6 +178,7 @@ export default function VisitorCertificatePage() {
     formState: { isSubmitting, errors } 
   } = useForm<VisitorFormInputs>({
     defaultValues: {
+      applicantName: paramName,
       purpose: 'General',
       helpedFinancially: 'No',
       centerVisited: '' 
@@ -254,7 +260,7 @@ export default function VisitorCertificatePage() {
 
       if (response.ok) {
         toast.success("Visitor data saved successfully!", { id: toastId });
-        setSavedRecord(json.data); // Trigger Controls
+        setSavedRecord(json.data); 
         reset();
         setPhones([]); setEmails([]); setDonatedItems([]); setVisitSure(true);
         pendingPhone.current = ""; pendingEmail.current = ""; pendingItemName.current = ""; pendingItemQty.current = "";
