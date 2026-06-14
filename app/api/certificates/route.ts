@@ -6,6 +6,7 @@ import path from 'path';
 import { google } from 'googleapis';
 import { Readable } from 'stream';
 import nodemailer from 'nodemailer';
+import { revalidatePath } from "next/cache";
 
 // --- GOOGLE DRIVE UPLOAD ---
 async function uploadToDrive(pdfBuffer: Buffer, fileName: string) {
@@ -462,6 +463,7 @@ export async function POST(req: Request) {
                     where: { id: id },
                     data: { lastSentEmail: new Date() }
                 });
+                revalidatePath(`/submissions/${id}`);
                 console.log(`Successfully updated lastSentEmail for submission ${id}`);
             } catch (dbError) {
                 console.error("Failed to update lastSentEmail in database:", dbError);

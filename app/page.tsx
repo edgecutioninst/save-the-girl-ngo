@@ -121,15 +121,11 @@ export default function AdminDashboard() {
     );
   };
 
-  // strips empty columns and formats arrays
   const cleanDataForExcel = (data: Submission[]) => {
     if (!data || data.length === 0) return [];
-
-    // Find all possible keys in this specific dataset
     const allKeys = new Set<string>();
     data.forEach(row => Object.keys(row).forEach(k => allKeys.add(k)));
 
-    // Identify keys that are entirely empty across ALL rows in this dataset
     const emptyKeys = new Set<string>();
     allKeys.forEach(key => {
       const isCompletelyEmpty = data.every(row => 
@@ -141,14 +137,11 @@ export default function AdminDashboard() {
       if (isCompletelyEmpty) emptyKeys.add(key);
     });
 
-    // Rebuild the objects, stripping empty keys and flattening arrays
     return data.map(row => {
       const cleanRow: any = {};
       allKeys.forEach(key => {
         if (!emptyKeys.has(key)) {
           let val = row[key];
-          
-          // Flatten Arrays (Phones, Emails, ItemsDonated) into readable strings
           if (Array.isArray(val)) {
             if (val.length > 0 && typeof val[0] === 'object') {
               val = val.map(item => `${item.item} (${item.quantity})`).join(", ");
@@ -168,13 +161,9 @@ export default function AdminDashboard() {
       toast.error("Please select at least one category to export.");
       return;
     }
-
     const toastId = toast.loading("Scrubbing data and generating Excel file...");
-
     try {
       const workbook = XLSX.utils.book_new();
-
-      // Filter master data by selected checkboxes
       const selectedData = submissions.filter(sub => 
         exportSelection.includes(sub.certificateType?.toUpperCase())
       );
@@ -184,21 +173,17 @@ export default function AdminDashboard() {
         return;
       }
 
-      //  Generate Master Combined Tab (Cleaned)
       if (exportSelection.length > 1) {
         const cleanedMaster = cleanDataForExcel(selectedData);
         const masterSheet = XLSX.utils.json_to_sheet(cleanedMaster);
         XLSX.utils.book_append_sheet(workbook, masterSheet, "Combined Data");
       }
 
-      //  Generate Individual Tabs for each selected type 
       exportSelection.forEach((category) => {
         const typeData = selectedData.filter(sub => sub.certificateType?.toUpperCase() === category);
-        
         if (typeData.length > 0) {
           const cleanedTypeData = cleanDataForExcel(typeData);
           const categorySheet = XLSX.utils.json_to_sheet(cleanedTypeData);
-          // Capitalize first letter for tab name
           const tabName = category.charAt(0) + category.slice(1).toLowerCase() + "s";
           XLSX.utils.book_append_sheet(workbook, categorySheet, tabName);
         }
@@ -232,16 +217,18 @@ export default function AdminDashboard() {
   const paginatedSubmissions = filteredSubmissions.slice(startIndex, startIndex + itemsPerPage);
 
   return (
-    <div className="p-8 w-full max-w-350 mx-auto bg-slate-50 min-h-screen">
-      <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="p-4 md:p-8 w-full max-w-7xl mx-auto bg-slate-50 min-h-screen">
+      
+      {/* Header */}
+      <div className="mb-6 md:mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
-          <p className="text-slate-500 mt-1">Review and approve certificate requests.</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Dashboard</h1>
+          <p className="text-sm md:text-base text-slate-500 mt-1">Review and approve certificate requests.</p>
         </div>
         
         <button 
           onClick={() => setIsExportModalOpen(true)}
-          className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm whitespace-nowrap"
+          className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-lg font-medium transition-colors shadow-sm whitespace-nowrap w-full sm:w-auto"
         >
           <Download className="h-4 w-4" />
           Export to Excel
@@ -252,23 +239,24 @@ export default function AdminDashboard() {
         {/* Top Control Bar */}
         <div className="p-4 border-b border-slate-200 space-y-4">
           <div className="flex flex-col md:flex-row justify-between gap-4">
-            <div className="relative w-full md:w-100">
+            <div className="relative w-full md:max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 h-4 w-4" />
               <input 
                 type="text" 
                 placeholder="Search by name, phone, email, or item..." 
-                className="w-full pl-9 pr-4 py-2.5 border border-slate-300 rounded-md outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                className="w-full pl-9 pr-4 py-2.5 border border-slate-300 rounded-md outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
 
-            <div className="flex gap-2 bg-slate-100 p-1 rounded-md overflow-x-auto">
+            {/* Scrollable Status Filter */}
+            <div className="flex gap-2 bg-slate-100 p-1 rounded-md overflow-x-auto no-scrollbar">
               {["All Status", "Pending", "Approved", "Rejected"].map(status => (
                 <button
                   key={status}
                   onClick={() => setStatusFilter(status)}
-                  className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${statusFilter === status ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'}`}
+                  className={`px-3 md:px-4 py-1.5 text-xs md:text-sm font-medium rounded-md transition-colors whitespace-nowrap ${statusFilter === status ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'}`}
                 >
                   {status}
                 </button>
@@ -276,15 +264,16 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 overflow-x-auto pb-2">
-            <div className="flex items-center gap-2 text-sm font-medium text-slate-500">
+          {/* Scrollable Type Filter */}
+          <div className="flex items-center gap-3 overflow-x-auto pb-2 no-scrollbar">
+            <div className="flex items-center gap-2 text-xs md:text-sm font-medium text-slate-500 whitespace-nowrap">
               <Filter className="h-4 w-4" /> Filter by Type:
             </div>
             {["All Types", "Host", "Visitor", "Donor", "Intern", "Volunteer"].map(type => (
               <button
                 key={type}
                 onClick={() => setTypeFilter(type)}
-                className={`px-3 py-1 text-sm border rounded-full transition-colors whitespace-nowrap ${typeFilter === type ? 'border-blue-600 bg-blue-50 text-blue-700 font-medium' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                className={`px-3 py-1 text-xs md:text-sm border rounded-full transition-colors whitespace-nowrap ${typeFilter === type ? 'border-blue-600 bg-blue-50 text-blue-700 font-medium' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
               >
                 {type}
               </button>
@@ -292,30 +281,34 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Data Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 text-slate-600 font-medium border-b border-slate-200">
-              <tr>
-                <th className="px-6 py-4">Applicant Name</th>
-                <th className="px-6 py-4">Contact Details</th>
-                <th className="px-6 py-4">Type</th>
-                <th className="px-6 py-4">Submitted Date</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {isLoading ? (
-                <tr><td colSpan={6} className="px-6 py-8 text-center text-slate-500">Loading submissions...</td></tr>
-              ) : paginatedSubmissions.length === 0 ? (
-                <tr><td colSpan={6} className="px-6 py-8 text-center text-slate-500">No submissions found.</td></tr>
-              ) : (
-                paginatedSubmissions.map((sub) => (
+        {/* LOADING & EMPTY STATES */}
+        {isLoading && (
+          <div className="p-8 text-center text-slate-500">Loading submissions...</div>
+        )}
+        {!isLoading && paginatedSubmissions.length === 0 && (
+          <div className="p-8 text-center text-slate-500">No submissions found.</div>
+        )}
+
+        {/* --- DESKTOP VIEW --- */}
+        {!isLoading && paginatedSubmissions.length > 0 && (
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-slate-50 text-slate-600 font-medium border-b border-slate-200">
+                <tr>
+                  <th className="px-6 py-4">Applicant Name</th>
+                  <th className="px-6 py-4">Contact Details</th>
+                  <th className="px-6 py-4">Type</th>
+                  <th className="px-6 py-4">Submitted Date</th>
+                  <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {paginatedSubmissions.map((sub) => (
                   <tr 
                     key={sub.id} 
                     onClick={() => router.push(`/submissions/${sub.id}`)}
-                    className="group cursor-pointer hover:bg-white hover:shadow-lg hover:relative hover:z-10 hover:ring-1 hover:ring-blue-300"
+                    className="group cursor-pointer hover:bg-white hover:shadow-lg hover:relative hover:z-10 hover:ring-1 hover:ring-blue-300 transition-all"
                   >
                     <td className="px-6 py-4 font-medium text-slate-900 align-top">{sub.applicantName}</td>
                     <td className="px-6 py-4 align-top">
@@ -349,14 +342,14 @@ export default function AdminDashboard() {
                     </td>
                     <td className="px-6 py-4 align-top" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-3">
-                        <button onClick={() => handleApprove(sub.id)} className="text-green-600 hover:text-green-700 bg-green-50 p-1.5 rounded-md"><CheckCircle2 className="h-5 w-5" /></button>
-                        <button onClick={() => handleReject(sub.id)} className="text-red-600 hover:text-red-700 bg-red-50 p-1.5 rounded-md"><XCircle className="h-5 w-5" /></button>
+                        <button onClick={() => handleApprove(sub.id)} className="text-green-600 hover:text-green-700 bg-green-50 p-1.5 rounded-md transition-colors"><CheckCircle2 className="h-5 w-5" /></button>
+                        <button onClick={() => handleReject(sub.id)} className="text-red-600 hover:text-red-700 bg-red-50 p-1.5 rounded-md transition-colors"><XCircle className="h-5 w-5" /></button>
                         <div className="w-px h-6 bg-slate-200 mx-1"></div>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <button className="text-slate-400 hover:text-red-600 p-1.5 rounded-md hover:bg-red-50"><Trash2 className="h-5 w-5" /></button>
+                            <button className="text-slate-400 hover:text-red-600 p-1.5 rounded-md hover:bg-red-50 transition-colors"><Trash2 className="h-5 w-5" /></button>
                           </AlertDialogTrigger>
-                          <AlertDialogContent>
+                          <AlertDialogContent className="w-[90vw] max-w-[500px]">
                             <AlertDialogHeader>
                               <AlertDialogTitle>Delete Submission?</AlertDialogTitle>
                               <AlertDialogDescription>This cannot be undone.</AlertDialogDescription>
@@ -370,17 +363,85 @@ export default function AdminDashboard() {
                       </div>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* --- MOBILE VIEW (CARD STACK) --- */}
+        {!isLoading && paginatedSubmissions.length > 0 && (
+          <div className="md:hidden flex flex-col divide-y divide-slate-100">
+            {paginatedSubmissions.map((sub) => (
+              <div 
+                key={sub.id} 
+                onClick={() => router.push(`/submissions/${sub.id}`)}
+                className="flex flex-col p-4 bg-white hover:bg-slate-50 cursor-pointer transition-colors space-y-4"
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-lg">{sub.applicantName}</h3>
+                    <p className="text-xs text-slate-500 mt-0.5">{new Date(sub.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                  </div>
+                  <span className="bg-slate-100 text-slate-700 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border border-slate-200">
+                    {sub.certificateType}
+                  </span>
+                </div>
+
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 space-y-2">
+                  {sub.phones && sub.phones.length > 0 && (
+                    <div className="flex items-center gap-2 text-sm text-slate-700">
+                      <Phone className="h-4 w-4 text-slate-400 shrink-0" />
+                      <span>{sub.phones[0]}</span>
+                    </div>
+                  )}
+                  {sub.emails && sub.emails.length > 0 && (
+                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                      <Mail className="h-4 w-4 text-slate-400 shrink-0" />
+                      <span className="truncate">{sub.emails[0]}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between pt-2">
+                  <div>
+                    {sub.status === 'APPROVED' && <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold border border-green-200">APPROVED</span>}
+                    {sub.status === 'PENDING' && <span className="bg-amber-100 text-amber-700 px-2 py-1 rounded text-xs font-bold border border-amber-200">PENDING</span>}
+                    {sub.status === 'REJECTED' && <span className="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold border border-red-200">REJECTED</span>}
+                  </div>
+                  
+                  <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                    <button onClick={() => handleApprove(sub.id)} className="text-green-600 hover:bg-green-100 bg-green-50 p-2 rounded-md transition-colors"><CheckCircle2 className="h-5 w-5" /></button>
+                    <button onClick={() => handleReject(sub.id)} className="text-red-600 hover:bg-red-100 bg-red-50 p-2 rounded-md transition-colors"><XCircle className="h-5 w-5" /></button>
+                    <div className="w-px h-6 bg-slate-200 mx-1 self-center"></div>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <button className="text-slate-400 hover:text-red-600 p-2 rounded-md hover:bg-red-50 transition-colors"><Trash2 className="h-5 w-5" /></button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="w-[90vw] max-w-[500px]">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Submission?</AlertDialogTitle>
+                          <AlertDialogDescription>This cannot be undone.</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(sub.id)} className="bg-red-600">Delete</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
         
-        <div className="p-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
-          <div className="text-sm text-slate-500 font-medium">
+        {/* Pagination */}
+        <div className="p-4 border-t border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="text-sm text-slate-500 font-medium text-center sm:text-left">
             Showing {filteredSubmissions.length === 0 ? 0 : startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredSubmissions.length)} of {filteredSubmissions.length}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center gap-2">
             <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-3 py-1.5 text-sm font-medium border rounded-md bg-white disabled:opacity-50">Previous</button>
             <div className="text-sm font-medium px-2">Page {currentPage} of {totalPages || 1}</div>
             <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages || totalPages === 0} className="px-3 py-1.5 text-sm font-medium border rounded-md bg-white disabled:opacity-50">Next</button>
@@ -392,14 +453,14 @@ export default function AdminDashboard() {
       {isExportModalOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full overflow-hidden border border-slate-100">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-slate-800">Export Submissions</h2>
+            <div className="p-4 md:p-6 border-b border-slate-100 flex justify-between items-center">
+              <h2 className="text-lg md:text-xl font-bold text-slate-800">Export Submissions</h2>
               <button onClick={() => setIsExportModalOpen(false)} className="text-slate-400 hover:text-slate-600">
                 <X className="h-5 w-5" />
               </button>
             </div>
             
-            <div className="p-6">
+            <div className="p-4 md:p-6">
               <p className="text-sm text-slate-500 mb-4">Select the categories you want to include in the Excel file. Empty columns will be automatically removed.</p>
               
               <div className="space-y-3">
@@ -443,7 +504,7 @@ export default function AdminDashboard() {
                   disabled={exportSelection.length === 0}
                   className="flex-1 px-4 py-2 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Download Excel
+                  Download
                 </button>
               </div>
             </div>

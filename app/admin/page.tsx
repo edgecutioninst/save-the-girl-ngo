@@ -44,7 +44,7 @@ export default function AdminDashboard() {
             <p className="text-sm text-slate-500">{module.description}</p>
           </Link>
         ))}
-      </div>
+      </div>a
     </div>
   );
 }

@@ -61,7 +61,7 @@ export default function CenterManager({ initialCenters }: { initialCenters: stri
         </div>
       </div>
 
-      <div className="flex gap-2 mb-6">
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <input 
           type="text" 
           placeholder="e.g. Gurugram Sector 14" 
@@ -73,7 +73,7 @@ export default function CenterManager({ initialCenters }: { initialCenters: stri
         <button 
           onClick={handleAdd}
           disabled={isSaving || !newCenter.trim()}
-          className="px-4 py-2 bg-slate-900 text-white rounded-md text-sm font-medium hover:bg-slate-800 disabled:opacity-50 transition-colors flex items-center gap-2"
+          className="w-full sm:w-auto justify-center px-4 py-2 bg-slate-900 text-white rounded-md text-sm font-medium hover:bg-slate-800 disabled:opacity-50 transition-colors flex items-center gap-2"
         >
           {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
           Add

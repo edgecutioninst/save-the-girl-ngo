@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import SubmissionControls from "@/modules/submissions/SubmissionControls";
 
+export const dynamic = 'force-dynamic';
+
 // --- HELPER  ---
 const DetailItem = ({ icon: Icon, label, value }: { icon: any, label: string, value: any }) => {
   if (value === null || value === undefined || value === '') return null;

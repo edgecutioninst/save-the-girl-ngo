@@ -124,15 +124,16 @@ export default function ManageUsersPage() {
   };
 
   return (
-    <div className="p-8 max-w-6xl mx-auto w-full">
-      <div className="flex justify-between items-center mb-8">
+    <div className="p-4 md:p-8 max-w-6xl mx-auto w-full">
+      {/* HEADER */}
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6 md:mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Manage Staff</h1>
-          <p className="text-slate-500 mt-2">Create and manage access for team members.</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Manage Staff</h1>
+          <p className="text-sm md:text-base text-slate-500 mt-1 md:mt-2">Create and manage access for team members.</p>
         </div>
         <button 
           onClick={openCreateModal}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
+          className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-medium transition-colors shadow-sm w-full sm:w-auto"
         >
           <UserPlus className="h-5 w-5" />
           Add New User
@@ -145,96 +146,163 @@ export default function ManageUsersPage() {
             <Loader2 className="h-8 w-8 animate-spin" />
           </div>
         ) : (
-          <table className="w-full text-left text-sm text-slate-600">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-medium">
-              <tr>
-                <th className="px-6 py-4">Name</th>
-                <th className="px-6 py-4">User ID</th>
-                <th className="px-6 py-4">Role</th>
-                <th className="px-6 py-4">Created Date</th>
-                <th className="px-6 py-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
+          <>
+            {/* --- DESKTOP VIEW (TABLE) --- */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left text-sm text-slate-600 min-w-[700px]">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-medium">
+                  <tr>
+                    <th className="px-6 py-4">Name</th>
+                    <th className="px-6 py-4">User ID</th>
+                    <th className="px-6 py-4">Role</th>
+                    <th className="px-6 py-4">Created Date</th>
+                    <th className="px-6 py-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {users.map((user) => {
+                    const isSelf = user.id === currentUserId;
+                    const isTargetAdmin = user.role === "ADMIN";
+                    const canDelete = !isSelf && (!isTargetAdmin || isMasterAdmin);
+
+                    return (
+                      <tr key={user.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-6 py-4 font-medium text-slate-900 flex items-center gap-3">
+                          <div className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 shrink-0">
+                            <User className="h-4 w-4" />
+                          </div>
+                          {user.name}
+                        </td>
+                        <td className="px-6 py-4 font-mono text-xs">{user.username}</td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
+                            user.role === "ADMIN" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"
+                          }`}>
+                            {user.role === "ADMIN" && <Shield className="h-3 w-3" />}
+                            {user.role}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-slate-500">
+                          {new Date(user.createdAt).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button 
+                              onClick={() => openEditModal(user)}
+                              className="text-slate-400 hover:text-blue-600 transition-colors p-2 rounded-lg hover:bg-blue-50"
+                              title="Edit User"
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </button>
+                            
+                            <button 
+                              onClick={() => initiateDelete(user.id)}
+                              disabled={!canDelete}
+                              className={`p-2 rounded-lg transition-colors ${
+                                !canDelete 
+                                  ? "text-slate-300 cursor-not-allowed" 
+                                  : "text-slate-400 hover:text-red-600 hover:bg-red-50"
+                              }`}
+                              title={
+                                isSelf 
+                                  ? "You cannot delete yourself" 
+                                  : (!canDelete ? "Only Master Admin can delete Admins" : "Delete User")
+                              }
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  
+                  {users.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
+                        No users found.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* --- MOBILE VIEW (CARD STACK) --- */}
+            <div className="md:hidden flex flex-col divide-y divide-slate-100">
               {users.map((user) => {
                 const isSelf = user.id === currentUserId;
                 const isTargetAdmin = user.role === "ADMIN";
                 const canDelete = !isSelf && (!isTargetAdmin || isMasterAdmin);
 
                 return (
-                  <tr key={user.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-6 py-4 font-medium text-slate-900 flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
-                        <User className="h-4 w-4" />
+                  <div key={user.id} className="p-4 flex flex-col gap-3 bg-white hover:bg-slate-50 transition-colors">
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 shrink-0">
+                          <User className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-slate-900 leading-tight">{user.name}</h3>
+                          <p className="text-xs text-slate-500 font-mono mt-0.5">{user.username}</p>
+                        </div>
                       </div>
-                      {user.name}
-                    </td>
-                    <td className="px-6 py-4 font-mono text-xs">{user.username}</td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
-                        user.role === "ADMIN" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"
+                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border ${
+                        user.role === "ADMIN" ? "bg-purple-50 text-purple-700 border-purple-200" : "bg-blue-50 text-blue-700 border-blue-200"
                       }`}>
-                        {user.role === "ADMIN" && <Shield className="h-3 w-3" />}
                         {user.role}
                       </span>
-                    </td>
-                    <td className="px-6 py-4 text-slate-500">
-                      {new Date(user.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                    </div>
+                    
+                    <div className="flex justify-between items-center mt-2 pt-3 border-t border-slate-100">
+                      <span className="text-xs text-slate-500 font-medium">
+                        Added: {new Date(user.createdAt).toLocaleDateString()}
+                      </span>
+                      <div className="flex gap-1">
                         <button 
                           onClick={() => openEditModal(user)}
-                          className="text-slate-400 hover:text-blue-600 transition-colors p-2 rounded-lg hover:bg-blue-50"
-                          title="Edit User"
+                          className="p-2 text-slate-400 hover:text-blue-600 bg-slate-50 hover:bg-blue-50 rounded-md transition-colors"
                         >
                           <Edit2 className="h-4 w-4" />
                         </button>
-                        
                         <button 
                           onClick={() => initiateDelete(user.id)}
                           disabled={!canDelete}
-                          className={`p-2 rounded-lg transition-colors ${
+                          className={`p-2 rounded-md transition-colors ${
                             !canDelete 
-                              ? "text-slate-300 cursor-not-allowed" 
-                              : "text-slate-400 hover:text-red-600 hover:bg-red-50"
+                              ? "text-slate-300 bg-slate-50 cursor-not-allowed" 
+                              : "text-slate-400 hover:text-red-600 bg-slate-50 hover:bg-red-50"
                           }`}
-                          title={
-                            isSelf 
-                              ? "You cannot delete yourself" 
-                              : (!canDelete ? "Only Master Admin can delete Admins" : "Delete User")
-                          }
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
-                    </td>
-                  </tr>
+                    </div>
+                  </div>
                 );
               })}
               
               {users.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
-                    No users found.
-                  </td>
-                </tr>
+                <div className="p-8 text-center text-slate-500">
+                  No users found.
+                </div>
               )}
-            </tbody>
-          </table>
+            </div>
+          </>
         )}
       </div>
 
+      {/* --- MODALS --- */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full overflow-hidden border border-slate-100">
-            <div className="p-6 border-b border-slate-100">
-              <h2 className="text-xl font-bold text-slate-800">
+            <div className="p-4 md:p-6 border-b border-slate-100">
+              <h2 className="text-lg md:text-xl font-bold text-slate-800">
                 {editMode ? "Edit Team Member" : "Add New Team Member"}
               </h2>
             </div>
             
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleSubmit} className="p-4 md:p-6 space-y-4">
               {error && (
                 <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm text-center">
                   {error}
@@ -246,7 +314,7 @@ export default function ManageUsersPage() {
                 <input
                   type="text"
                   required
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 outline-none"
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 outline-none text-base md:text-sm"
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
                   placeholder="e.g. Full Name"
@@ -258,7 +326,7 @@ export default function ManageUsersPage() {
                 <input
                   type="text"
                   required
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 outline-none"
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 outline-none text-base md:text-sm"
                   value={formData.username}
                   onChange={(e) => setFormData({...formData, username: e.target.value})}
                   placeholder="e.g. user123"
@@ -272,7 +340,7 @@ export default function ManageUsersPage() {
                 <input
                   type="password"
                   required={!editMode}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 outline-none"
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 outline-none text-base md:text-sm"
                   value={formData.password}
                   onChange={(e) => setFormData({...formData, password: e.target.value})}
                   placeholder="••••••••"
@@ -282,7 +350,7 @@ export default function ManageUsersPage() {
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
                 <select
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 outline-none disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 outline-none disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed text-base md:text-sm"
                   value={formData.role}
                   onChange={(e) => setFormData({...formData, role: e.target.value})}
                   disabled={editMode && formData.id === currentUserId}
@@ -295,7 +363,7 @@ export default function ManageUsersPage() {
                 )}
               </div>
 
-              <div className="flex gap-3 pt-4">
+              <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
@@ -308,7 +376,7 @@ export default function ManageUsersPage() {
                   disabled={isSubmitting}
                   className="flex-1 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-70 flex justify-center items-center"
                 >
-                  {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : (editMode ? "Update User" : "Create User")}
+                  {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : (editMode ? "Update" : "Create")}
                 </button>
               </div>
             </form>
@@ -326,7 +394,7 @@ export default function ManageUsersPage() {
             <p className="text-sm text-slate-500 mb-6">
               Are you sure you want to revoke the access of this user permanently? This action cannot be undone.
             </p>
-            <div className="flex gap-3">
+            <div className="flex flex-col-reverse sm:flex-row gap-3">
               <button
                 onClick={() => setUserToDelete(null)}
                 className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors"
