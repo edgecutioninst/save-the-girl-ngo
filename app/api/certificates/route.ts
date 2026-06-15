@@ -391,11 +391,11 @@ export async function POST(req: Request) {
             switch (typeKey) {
                 case 'DONOR':
                     emailDisplayActivity = "Donation";
-                    customSubject = "Thank you from Save The Girl! Your Certificate of Donation Inside";
+                    customSubject = "Thank you from Save The Girl! 🌸 Your Certificate of Donation Inside";
                     break;
                 case 'HOST':
                     emailDisplayActivity = "Hosting Partner";
-                    customSubject = "Thank you from Save The Girl! Your Certificate of Hosting Partner Inside";
+                    customSubject = "Thank you from Save The Girl! 🌸 Your Certificate of Hosting Partner Inside";
                     break;
                 case 'VISITOR':
                     emailDisplayActivity = "Visit";

@@ -349,7 +349,7 @@ export default function AdminDashboard() {
                           <AlertDialogTrigger asChild>
                             <button className="text-slate-400 hover:text-red-600 p-1.5 rounded-md hover:bg-red-50 transition-colors"><Trash2 className="h-5 w-5" /></button>
                           </AlertDialogTrigger>
-                          <AlertDialogContent className="w-[90vw] max-w-[500px]">
+                          <AlertDialogContent className="w-[90vw] max-w-125">
                             <AlertDialogHeader>
                               <AlertDialogTitle>Delete Submission?</AlertDialogTitle>
                               <AlertDialogDescription>This cannot be undone.</AlertDialogDescription>
@@ -418,7 +418,7 @@ export default function AdminDashboard() {
                       <AlertDialogTrigger asChild>
                         <button className="text-slate-400 hover:text-red-600 p-2 rounded-md hover:bg-red-50 transition-colors"><Trash2 className="h-5 w-5" /></button>
                       </AlertDialogTrigger>
-                      <AlertDialogContent className="w-[90vw] max-w-[500px]">
+                      <AlertDialogContent className="w-[90vw] max-w-125">
                         <AlertDialogHeader>
                           <AlertDialogTitle>Delete Submission?</AlertDialogTitle>
                           <AlertDialogDescription>This cannot be undone.</AlertDialogDescription>

@@ -85,7 +85,8 @@ const KeyValueInput = ({ items, setItems, nameRef, qtyRef }: { items: DonatedIte
     <div className="space-y-2">
       <label className="text-sm font-medium text-slate-700">Items Donated (Optional)</label>
       <div className="p-4 border border-slate-300 rounded-md bg-slate-50 space-y-4">
-        <div className="flex gap-2">
+        
+        <div className="flex flex-col sm:flex-row gap-2">
           <input 
             type="text" 
             value={itemName} 
@@ -93,22 +94,26 @@ const KeyValueInput = ({ items, setItems, nameRef, qtyRef }: { items: DonatedIte
             placeholder="Item name (e.g. Books, Clothes)" 
             className="flex-1 p-2 text-sm border border-slate-300 rounded-md outline-none focus:ring-2 focus:ring-blue-500"
           />
-          <input 
-            type="number" 
-            value={itemQty} 
-            onChange={handleQtyChange} 
-            placeholder="Qty" 
-            min="1"
-            className="w-24 p-2 text-sm border border-slate-300 rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <button 
-            type="button" 
-            onClick={handleAddItem}
-            className="p-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
-          >
-            <Plus className="h-5 w-5" />
-          </button>
+          
+          <div className="flex gap-2 w-full sm:w-auto">
+            <input 
+              type="number" 
+              value={itemQty} 
+              onChange={handleQtyChange} 
+              placeholder="Qty" 
+              min="1"
+              className="w-full sm:w-24 p-2 text-sm border border-slate-300 rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button 
+              type="button" 
+              onClick={handleAddItem}
+              className="p-2 px-4 sm:px-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors flex items-center justify-center shrink-0"
+            >
+              <Plus className="h-5 w-5" />
+            </button>
+          </div>
         </div>
+
         {items.length > 0 && (
           <ul className="space-y-2">
             {items.map((entry, index) => (

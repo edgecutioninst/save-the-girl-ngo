@@ -149,7 +149,7 @@ export default function ManageUsersPage() {
           <>
             {/* --- DESKTOP VIEW (TABLE) --- */}
             <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left text-sm text-slate-600 min-w-[700px]">
+              <table className="w-full text-left text-sm text-slate-600 min-w-175">
                 <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-medium">
                   <tr>
                     <th className="px-6 py-4">Name</th>
