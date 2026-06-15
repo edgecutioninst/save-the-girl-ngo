@@ -167,7 +167,6 @@ export default function SubmissionControls({
     }
   };
 
-  // Extract Modal Content so we don't repeat it
   const ModalContent = (
     <DialogContent className="sm:max-w-106.25">
       <DialogHeader>
@@ -258,18 +257,32 @@ export default function SubmissionControls({
         </div>
       </div>
 
-      <DialogFooter className="sm:justify-between w-full">
+      {/* FOOTER */}
+      <DialogFooter className="flex flex-col sm:flex-row sm:justify-between w-full gap-3 sm:gap-0 mt-4">
         <Button 
           type="button" 
           variant="ghost" 
           onClick={() => router.push('/')} 
-          className="text-slate-500 hover:text-slate-700 hidden sm:flex"
+          className="text-slate-500 hover:text-slate-700 w-full sm:w-auto order-3 sm:order-1"
         >
           Go to Dashboard
         </Button>
-        <div className="flex gap-2 w-full sm:w-auto justify-end">
-          <Button variant="outline" onClick={() => handleModalOpenChange(false)} disabled={isGenerating}>Cancel</Button>
-          <Button onClick={handleGenerateCertificate} disabled={isGenerating || (!saveLocally && !saveToDrive && !sendEmail)} className="bg-blue-600 min-w-35">
+        
+        {/* Right side on desktop, top on mobile */}
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto order-1 sm:order-2">
+          <Button 
+            variant="outline" 
+            onClick={() => handleModalOpenChange(false)} 
+            disabled={isGenerating}
+            className="w-full sm:w-auto order-2 sm:order-1"
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleGenerateCertificate} 
+            disabled={isGenerating || (!saveLocally && !saveToDrive && !sendEmail)} 
+            className="bg-blue-600 w-full sm:min-w-35 order-1 sm:order-2"
+          >
             {isGenerating ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
