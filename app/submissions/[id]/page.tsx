@@ -41,7 +41,7 @@ export default async function SubmissionDetailPage({ params }: { params: Promise
 
   if (!submission) return notFound(); 
 
-  const referenceNumber = `STG/CMS/${String(submission.serialNumber).padStart(7, '0')}`;
+  const referenceNumber = `STG/CMS/${submission.serialNumber}`;
 
   const itemsDonated = submission.itemsDonated as { item: string, quantity: number }[] | null;
   const socialLinks = submission.socialLinks as Record<string, string> | null;

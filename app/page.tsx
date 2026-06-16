@@ -201,9 +201,8 @@ export default function AdminDashboard() {
 
   const filteredSubmissions = submissions.filter(sub => {
     const query = searchQuery.toLowerCase().trim();
-    
-    // Create the formatted ID for searching (e.g. stg/cms/0000001)
-    const formattedId = sub.serialNumber ? `stg/cms/${String(sub.serialNumber).padStart(7, '0')}` : "";
+  
+    const formattedId = sub.serialNumber ? `stg/cms/${sub.serialNumber}` : "";
     
     const matchesSearch = 
       query === "" || 
@@ -320,7 +319,7 @@ export default function AdminDashboard() {
                     <td className="px-6 py-4 align-top">
                       <div className="font-medium text-slate-900">{sub.applicantName}</div>
                       <div className="text-xs text-slate-400 font-mono mt-1 tracking-wider uppercase">
-                        STG/CMS/{String(sub.serialNumber).padStart(7, '0')}
+                        STG/CMS/{sub.serialNumber}
                       </div>
                     </td>
                     <td className="px-6 py-4 align-top">

@@ -280,7 +280,7 @@ export default function SubmissionControls({
           <Button 
             onClick={handleGenerateCertificate} 
             disabled={isGenerating || (!saveLocally && !saveToDrive && !sendEmail)} 
-            className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto sm:min-w-[150px]"
+            className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto sm:min-w-37.5"
           >
             {isGenerating ? (
               <>
