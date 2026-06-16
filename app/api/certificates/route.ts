@@ -443,6 +443,7 @@ export async function POST(req: Request) {
                 from: process.env.EMAIL_USER,
                 to: options.targetEmail, 
                 replyTo: "info@savegirl.org", 
+                bcc: "info@savegirl.org", 
                 subject: customSubject,
                 html: emailHtml,
                 attachments: [

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/incompatible-library */
 "use client";
@@ -10,7 +11,7 @@ import { X, Plus, Loader2, Save } from "lucide-react";
 import SubmissionControls from "@/modules/submissions/SubmissionControls";
 
 // --- SMART TAG INPUT ---
-const TagInput = ({ label, placeholder, tags, setTags, inputRef }: { label: string, placeholder: string, tags: string[], setTags: (tags: string[]) => void, inputRef: React.MutableRefObject<string> }) => {
+const TagInput = ({ label, placeholder, tags, setTags, inputRef, type = "text" }: { label: string, placeholder: string, tags: string[], setTags: (tags: string[]) => void, inputRef: React.MutableRefObject<string>, type?: string }) => {
   const [inputValue, setInputValue] = useState("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -48,7 +49,7 @@ const TagInput = ({ label, placeholder, tags, setTags, inputRef }: { label: stri
           ))}
         </div>
         <input
-          type="text"
+          type={type}
           value={inputValue}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
@@ -143,18 +144,27 @@ type HostFormInputs = {
   helpedFinancially: string;
   financialAmount?: string;
   nextExpectedVisit?: string;
+  // --- ADDED SOCIALS ---
+  facebook: string;
+  instagram: string;
+  linkedin: string;
+  twitter: string;
 };
 
 function HostForm() {
   const searchParams = useSearchParams();
   
-  // EXTRACT PARAMS (For Copy & Edit)
-  const editId = searchParams.get('editId'); // <-- THE NEW EDIT TRIGGER
+  // EXTRACT PARAMS 
+  const editId = searchParams.get('editId'); 
   
   const paramName = searchParams.get('name') || '';
   const paramPhone = searchParams.get('phone') || '';
   const paramEmail = searchParams.get('email') || '';
   const paramAddress = searchParams.get('address') || '';
+  const paramFb = searchParams.get('facebook') || '';
+  const paramInsta = searchParams.get('instagram') || '';
+  const paramLi = searchParams.get('linkedin') || '';
+  const paramTw = searchParams.get('twitter') || '';
   const paramItems = searchParams.get('items'); 
 
   const [emails, setEmails] = useState<string[]>([]);
@@ -164,7 +174,6 @@ function HostForm() {
   const [visitSure, setVisitSure] = useState(true);
   const [isFetchingEdit, setIsFetchingEdit] = useState(!!editId);
   
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [savedRecord, setSavedRecord] = useState<any>(null);
 
   // Auto-Save Refs
@@ -214,6 +223,10 @@ function HostForm() {
     if (!editId) {
       if (paramName) setValue("applicantName", paramName);
       if (paramAddress) setValue("facilityLocation", paramAddress); 
+      if (paramFb) setValue("facebook", paramFb);
+      if (paramInsta) setValue("instagram", paramInsta);
+      if (paramLi) setValue("linkedin", paramLi);
+      if (paramTw) setValue("twitter", paramTw);
       if (paramPhone) setPhones([paramPhone]);
       if (paramEmail) setEmails([paramEmail]);
       if (paramItems) {
@@ -223,7 +236,7 @@ function HostForm() {
         } catch (e) { console.error(e) }
       }
     }
-  }, [editId, searchParams, setValue, paramName, paramAddress, paramPhone, paramEmail, paramItems]);
+  }, [editId, searchParams, setValue, paramName, paramAddress, paramPhone, paramEmail, paramFb, paramInsta, paramLi, paramTw, paramItems]);
 
   // HYDRATE FROM EDIT (DATABASE)
   useEffect(() => {
@@ -251,6 +264,13 @@ function HostForm() {
               setVisitSure(true);
             } else {
               setVisitSure(false);
+            }
+
+            if (d.socialLinks) {
+              setValue("facebook", (d.socialLinks as any).facebook || "");
+              setValue("instagram", (d.socialLinks as any).instagram || "");
+              setValue("linkedin", (d.socialLinks as any).linkedin || "");
+              setValue("twitter", (d.socialLinks as any).twitter || "");
             }
 
             setPhones(d.phones || []);
@@ -296,7 +316,6 @@ function HostForm() {
     const toastId = toast.loading(editId ? "Updating record..." : "Saving host data...");
 
     // Create the payload
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const payload: any = {
       applicantName: data.applicantName, 
       certificateType: 'HOST',
@@ -314,6 +333,12 @@ function HostForm() {
       helpedFinancially: data.helpedFinancially === 'Yes',
       financialAmount: data.financialAmount ? parseFloat(data.financialAmount) : null,
       nextExpectedVisit: (visitSure && data.nextExpectedVisit) ? new Date(data.nextExpectedVisit).toISOString() : null,
+      socialLinks: {
+        facebook: data.facebook,
+        instagram: data.instagram,
+        linkedin: data.linkedin,
+        twitter: data.twitter
+      }
     };
 
     // If we are editing, attach the ID to the payload
@@ -419,7 +444,7 @@ function HostForm() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <TagInput label="Phone Numbers *" placeholder="Enter phone and press Enter" tags={phones} setTags={setPhones} inputRef={pendingPhone} />
-          <TagInput label="Email Addresses (Optional)" placeholder="Enter email and press Enter" tags={emails} setTags={setEmails} inputRef={pendingEmail} />
+          <TagInput label="Email Addresses (Optional)" placeholder="Enter email and press Enter" tags={emails} setTags={setEmails} inputRef={pendingEmail} type="email" />
         </div>
 
         <hr className="border-slate-200" />
@@ -470,6 +495,20 @@ function HostForm() {
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">Future Partnership Remarks</label>
             <textarea {...register("futurePartnershipRemarks")} className="w-full p-2.5 border border-slate-300 rounded-md h-20 outline-none focus:ring-2 focus:ring-blue-500" placeholder="Add remarks..."></textarea>
+          </div>
+        </div>
+
+        <hr className="border-slate-200" />
+
+        <div className="grid grid-cols-1 gap-6">
+          <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+            <label className="block text-sm font-medium text-slate-700 mb-4">Social Media Links (Optional)</label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <input {...register("facebook")} type="url" className="w-full p-2 border border-slate-300 rounded-md outline-none focus:ring-2 focus:ring-blue-500" placeholder="Facebook URL" />
+              <input {...register("instagram")} type="url" className="w-full p-2 border border-slate-300 rounded-md outline-none focus:ring-2 focus:ring-blue-500" placeholder="Instagram URL" />
+              <input {...register("linkedin")} type="url" className="w-full p-2 border border-slate-300 rounded-md outline-none focus:ring-2 focus:ring-blue-500" placeholder="LinkedIn URL" />
+              <input {...register("twitter")} type="url" className="w-full p-2 border border-slate-300 rounded-md outline-none focus:ring-2 focus:ring-blue-500" placeholder="Twitter URL" />
+            </div>
           </div>
         </div>
 
